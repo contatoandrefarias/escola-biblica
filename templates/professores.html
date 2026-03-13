@@ -3,45 +3,46 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0">👨‍🏫 Professores</h4>
-    <a href="/professores/novo" class="btn btn-success">
+    <a href="/professores/novo" class="btn btn-primary">
         ➕ Novo Professor
     </a>
 </div>
 
-<div class="card">
+<div class="card shadow-sm">
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 align-middle">
             <thead class="table-dark">
                 <tr>
-                    <th>#</th>
                     <th>Nome</th>
-                    <th>Especialidade</th>
                     <th>Telefone</th>
                     <th>E-mail</th>
-                    <th>Cadastro</th>
+                    <th>Especialidade</th>
+                    <th class="text-center">Acoes</th>
                 </tr>
             </thead>
             <tbody>
                 {% if professores %}
-                    {% for p in professores %}
-                    <tr>
-                        <td class="text-muted">{{ p['id'] }}</td>
-                        <td class="fw-semibold">{{ p['nome'] }}</td>
-                        <td>{{ p['especialidade'] or '—' }}</td>
-                        <td>{{ p['telefone'] or '—' }}</td>
-                        <td>{{ p['email'] or '—' }}</td>
-                        <td class="text-muted small">
-                            {{ p['data_cadastro'] }}
-                        </td>
-                    </tr>
-                    {% endfor %}
+                {% for p in professores %}
+                <tr>
+                    <td class="fw-semibold">{{ p['nome'] }}</td>
+                    <td>{{ p['telefone'] or '—' }}</td>
+                    <td>{{ p['email'] or '—' }}</td>
+                    <td>{{ p['especialidade'] or '—' }}</td>
+                    <td class="text-center">
+                        <a href="/professores/{{ p['id'] }}/editar"
+                           class="btn btn-sm btn-warning">
+                            ✏️ Editar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
                 {% else %}
-                    <tr>
-                        <td colspan="6"
-                            class="text-center py-5 text-muted">
-                            Nenhum professor cadastrado ainda.
-                        </td>
-                    </tr>
+                <tr>
+                    <td colspan="5"
+                        class="text-center py-5 text-muted">
+                        Nenhum professor cadastrado.
+                    </td>
+                </tr>
                 {% endif %}
             </tbody>
         </table>

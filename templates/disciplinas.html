@@ -3,53 +3,70 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0">📚 Disciplinas</h4>
-    <a href="/disciplinas/nova" class="btn btn-warning">
+    <a href="/disciplinas/nova" class="btn btn-primary">
         ➕ Nova Disciplina
     </a>
 </div>
 
-<div class="card">
+<div class="card shadow-sm">
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>Nome</th>
                     <th>Professor</th>
-                    <th>Carga</th>
-                    <th>Nota Mín.</th>
-                    <th>Freq. Mín.</th>
-                    <th>Status</th>
+                    <th class="text-center">Duracao</th>
+                    <th class="text-center">Atividades</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Acoes</th>
                 </tr>
             </thead>
             <tbody>
                 {% if disciplinas %}
-                    {% for d in disciplinas %}
-                    <tr>
-                        <td class="fw-semibold">{{ d['nome'] }}</td>
-                        <td>{{ d['prof_nome'] or '—' }}</td>
-                        <td>{{ d['carga_horaria'] }}h</td>
-                        <td>{{ d['nota_minima'] }}</td>
-                        <td>{{ d['frequencia_minima'] }}%</td>
-                        <td>
-                            {% if d['ativa'] %}
-                                <span class="badge bg-success">
-                                    ✅ Ativa
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary">
-                                    ⏸️ Inativa
-                                </span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
+                {% for d in disciplinas %}
+                <tr>
+                    <td class="fw-semibold">{{ d['nome'] }}</td>
+                    <td>{{ d['prof_nome'] or '—' }}</td>
+                    <td class="text-center">
+                        <span class="badge bg-secondary">
+                            {{ d['duracao_semanas'] }} sem.
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        {% if d['tem_atividades'] %}
+                        <span class="badge bg-warning text-dark">
+                            📝 Sim
+                        </span>
+                        {% else %}
+                        <span class="badge bg-light text-muted">
+                            Nao
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if d['ativa'] %}
+                        <span class="badge bg-success">✅ Ativa</span>
+                        {% else %}
+                        <span class="badge bg-secondary">
+                            ⏸ Inativa
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a href="/disciplinas/{{ d['id'] }}/editar"
+                           class="btn btn-sm btn-warning">
+                            ✏️ Editar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
                 {% else %}
-                    <tr>
-                        <td colspan="6"
-                            class="text-center py-5 text-muted">
-                            Nenhuma disciplina cadastrada ainda.
-                        </td>
-                    </tr>
+                <tr>
+                    <td colspan="6"
+                        class="text-center py-5 text-muted">
+                        Nenhuma disciplina cadastrada.
+                    </td>
+                </tr>
                 {% endif %}
             </tbody>
         </table>

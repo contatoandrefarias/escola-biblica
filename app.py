@@ -697,6 +697,76 @@ def minha_conta():
         return redirect(url_for("index"))
     return render_template("minha_conta.html")
 
+# ══════════════════════════════════════
+# EDITAR PROFESSOR
+# ══════════════════════════════════════
+@app.route("/professores/<int:id>/editar", methods=["GET", "POST"])
+@login_required
+def editar_professor(id):
+    conn   = conectar()
+    cursor = conn.cursor()
+    if request.method == "POST":
+        nome          = request.form.get("nome", "").strip()
+        telefone      = request.form.get("telefone", "").strip()
+        email         = request.form.get("email", "").strip()
+        especialidade = request.form.get("especialidade", "").strip()
+        cursor.execute("""
+            UPDATE professores
+            SET nome=?, telefone=?, email=?, especialidade=?
+            WHERE id=?
+        """, (nome, telefone, email, especialidade, id))
+        conn.commit()
+        conn.close()
+        flash("Professor atualizado!", "sucesso")
+        return redirect(url_for("professores"))
+    cursor.execute("SELECT * FROM professores WHERE id=?", (id,))
+    prof = cursor.fetchone()
+    conn.close()
+    if not prof:
+        flash("Professor nao encontrado!", "erro")
+        return redirect(url_for("professores"))
+    return render_template("editar_professor.html", professor=prof)
+
+
+# ══════════════════════════════════════
+# EDITAR DISCIPLINA
+# ══════════════════════════════════════
+@app.route("/disciplinas/<int:id>/editar", methods=["GET", "POST"])
+@login_required
+def editar_disciplina(id):
+    conn   = conectar()
+    cursor = conn.cursor()
+    if request.method == "POST":
+        nome      = request.form.get("nome", "").strip()
+        descricao = request.form.get("descricao", "").strip()
+        semanas   = request.form.get("duracao_semanas", "4")
+        nota_min  = request.form.get("nota_minima", "6.0")
+        freq_min  = request.form.get("frequencia_minima", "75")
+        tem_ativ  = 1 if request.form.get("tem_atividades") else 0
+        prof_id   = request.form.get("professor_id") or None
+        ativa     = 1 if request.form.get("ativa") else 0
+        cursor.execute("""
+            UPDATE disciplinas
+            SET nome=?, descricao=?, duracao_semanas=?,
+                nota_minima=?, frequencia_minima=?,
+                tem_atividades=?, professor_id=?, ativa=?
+            WHERE id=?
+        """, (nome, descricao, int(semanas), float(nota_min),
+              float(freq_min), tem_ativ, prof_id, ativa, id))
+        conn.commit()
+        conn.close()
+        flash("Disciplina atualizada!", "sucesso")
+        return redirect(url_for("disciplinas"))
+    cursor.execute("SELECT * FROM disciplinas WHERE id=?", (id,))
+    disc = cursor.fetchone()
+    cursor.execute("SELECT * FROM professores ORDER BY nome")
+    profs = cursor.fetchall()
+    conn.close()
+    if not disc:
+        flash("Disciplina nao encontrada!", "erro")
+        return redirect(url_for("disciplinas"))
+    return render_template("editar_disciplina.html",
+        disciplina=disc, professores=profs)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
