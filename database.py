@@ -85,6 +85,8 @@ def inicializar_banco():
             nota2          REAL,
             nota_final     REAL,
             status         TEXT DEFAULT 'cursando',
+            data_inicio    TEXT DEFAULT (date('now')),
+            data_conclusao TEXT,
             data_matricula TEXT DEFAULT (date('now')),
             FOREIGN KEY (aluno_id)      REFERENCES alunos(id),
             FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id),

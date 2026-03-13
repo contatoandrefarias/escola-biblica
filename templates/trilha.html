@@ -1,128 +1,269 @@
 {% extends "base.html" %}
 {% block conteudo %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-1">📋 Trilha de Formação</h4>
-        <span class="text-muted">
-            {{ aluno['nome'] }}
-            {% if aluno['membro_igreja'] %}
-                <span class="badge bg-primary ms-2">✝️ Membro</span>
-            {% else %}
-                <span class="badge bg-secondary ms-2">
-                    👤 Visitante
-                </span>
-            {% endif %}
-        </span>
-    </div>
-    <a href="/alunos" class="btn btn-outline-secondary">← Voltar</a>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card text-white text-center"
-             style="background:linear-gradient(135deg,#1b5e20,#388e3c)">
-            <div class="card-body py-3">
-                <div class="fs-2 fw-bold">{{ aprovadas }}</div>
-                <div class="small">✅ Aprovadas</div>
-            </div>
+<!-- CABEÇALHO DO ALUNO -->
+<div class="card border-0 shadow-sm mb-4"
+     style="background:linear-gradient(135deg,#1a237e,#4527a0);color:#fff">
+    <div class="card-body d-flex align-items-center gap-3 py-3">
+        <div style="width:56px;height:56px;border-radius:50%;
+                    background:rgba(255,255,255,0.2);
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:1.8rem">
+            👤
         </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-white text-center"
-             style="background:linear-gradient(135deg,#b71c1c,#e53935)">
-            <div class="card-body py-3">
-                <div class="fs-2 fw-bold">{{ reprovadas }}</div>
-                <div class="small">❌ Reprovadas</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-white text-center"
-             style="background:linear-gradient(135deg,#1a237e,#3949ab)">
-            <div class="card-body py-3">
-                <div class="fs-2 fw-bold">{{ cursando }}</div>
-                <div class="small">📘 Cursando</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-white text-center"
-             style="background:linear-gradient(135deg,#212121,#424242)">
-            <div class="card-body py-3">
-                <div class="fs-2 fw-bold">{{ trilha|length }}</div>
-                <div class="small">📋 Total</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header fw-semibold">Disciplinas</div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Disciplina</th>
-                    <th>Carga</th>
-                    <th>Nota 1</th>
-                    <th>Nota 2</th>
-                    <th>Média</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if trilha %}
-                    {% for t in trilha %}
-                    <tr>
-                        <td class="fw-semibold">{{ t['nome'] }}</td>
-                        <td>{{ t['carga_horaria'] }}h</td>
-                        <td>
-                            {% if t['nota1'] is not none %}
-                                {{ t['nota1'] }}
-                            {% else %}—{% endif %}
-                        </td>
-                        <td>
-                            {% if t['nota2'] is not none %}
-                                {{ t['nota2'] }}
-                            {% else %}—{% endif %}
-                        </td>
-                        <td class="fw-bold">
-                            {% if t['nota_final'] is not none %}
-                                {{ t['nota_final'] | round(1) }}
-                            {% else %}—{% endif %}
-                        </td>
-                        <td>
-                            {% if t['status'] == 'aprovado' %}
-                                <span class="badge bg-success">
-                                    ✅ Aprovado
-                                </span>
-                            {% elif t['status'] == 'reprovado' %}
-                                <span class="badge bg-danger">
-                                    ❌ Reprovado
-                                </span>
-                            {% else %}
-                                <span class="badge bg-primary">
-                                    📘 Cursando
-                                </span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="6"
-                            class="text-center py-5 text-muted">
-                            Nenhuma disciplina matriculada.
-                        </td>
-                    </tr>
+        <div>
+            <h4 class="fw-bold mb-0">{{ aluno['nome'] }}</h4>
+            <div class="small opacity-75">
+                {% if aluno['turma_id'] %}
+                🏫 Turma cadastrada
                 {% endif %}
-            </tbody>
-        </table>
-    </div>
-    <div class="card-footer text-muted small">
-        Cadastro: {{ aluno['data_cadastro'] }}
+                {% if aluno['membro_igreja'] %}
+                | ✝️ Membro da Igreja
+                {% endif %}
+            </div>
+        </div>
+        <div class="ms-auto d-flex gap-3 text-center">
+            <div>
+                <div class="fs-4 fw-bold text-success">{{ aprovadas }}</div>
+                <div class="small opacity-75">Aprovado(s)</div>
+            </div>
+            <div>
+                <div class="fs-4 fw-bold text-warning">{{ em_curso }}</div>
+                <div class="small opacity-75">Cursando</div>
+            </div>
+            <div>
+                <div class="fs-4 fw-bold text-danger">{{ reprovadas }}</div>
+                <div class="small opacity-75">Reprovado(s)</div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- MENU DA TRILHA -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="fw-semibold text-muted small me-2">
+                📊 Filtrar:
+            </span>
+            <button onclick="filtrar('todos')"
+                    class="btn btn-sm btn-primary" id="btn_todos">
+                Todos ({{ trilha|length }})
+            </button>
+            <button onclick="filtrar('aprovado')"
+                    class="btn btn-sm btn-outline-success" id="btn_aprovado">
+                ✅ Aprovados ({{ aprovadas }})
+            </button>
+            <button onclick="filtrar('cursando')"
+                    class="btn btn-sm btn-outline-primary" id="btn_cursando">
+                📖 Cursando ({{ em_curso }})
+            </button>
+            <button onclick="filtrar('reprovado')"
+                    class="btn btn-sm btn-outline-danger" id="btn_reprovado">
+                ❌ Reprovados ({{ reprovadas }})
+            </button>
+            <a href="/alunos/{{ aluno['id'] }}/editar"
+               class="btn btn-sm btn-outline-secondary ms-auto">
+                ✏️ Editar Aluno
+            </a>
+            <a href="/alunos" class="btn btn-sm btn-outline-dark">
+                ← Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- TRILHA DE DISCIPLINAS -->
+{% if trilha %}
+<div id="lista_trilha">
+{% for t in trilha %}
+<div class="card shadow-sm mb-3 trilha-item"
+     data-status="{{ t['status'] }}">
+    <div class="card-body p-0">
+        <div class="row g-0 align-items-stretch">
+
+            <!-- INDICADOR LATERAL -->
+            <div class="col-auto d-flex align-items-center
+                        justify-content-center px-3"
+                 style="min-width:60px;border-radius:12px 0 0 12px;
+                 background:{% if t['status'] == 'aprovado' %}#2e7d32
+                 {% elif t['status'] == 'reprovado' %}#c62828
+                 {% else %}#1565c0{% endif %}">
+                <div class="text-white text-center">
+                    {% if t['status'] == 'aprovado' %}
+                    <div class="fs-4">✅</div>
+                    {% elif t['status'] == 'reprovado' %}
+                    <div class="fs-4">❌</div>
+                    {% else %}
+                    <div class="fs-4">📖</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- CONTEUDO -->
+            <div class="col p-3">
+                <div class="row align-items-center g-2">
+
+                    <!-- NOME DA DISCIPLINA -->
+                    <div class="col-md-4">
+                        <div class="fw-bold fs-6">
+                            {{ t['disciplina'] }}
+                        </div>
+                        {% if t['professor'] %}
+                        <div class="text-muted small">
+                            👨‍🏫 {{ t['professor'] }}
+                        </div>
+                        {% endif %}
+                        <div class="text-muted small">
+                            ⏱️ {{ t['duracao_semanas'] }} semana(s)
+                        </div>
+                    </div>
+
+                    <!-- DATAS -->
+                    <div class="col-md-3">
+                        <div class="small text-muted fw-semibold mb-1">
+                            📅 DATAS
+                        </div>
+                        <div class="small">
+                            <span class="text-muted">Início:</span>
+                            <span class="fw-semibold">
+                                {% if t['data_inicio'] %}
+                                    {{ t['data_inicio']|replace('-', '/') }}
+                                {% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="small mt-1">
+                            <span class="text-muted">Conclusão:</span>
+                            <span class="fw-semibold">
+                                {% if t['data_conclusao'] %}
+                                    {{ t['data_conclusao']|replace('-', '/') }}
+                                {% else %}
+                                <span class="text-warning">Em andamento</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- NOTAS -->
+                    <div class="col-md-3">
+                        <div class="small text-muted fw-semibold mb-1">
+                            🎯 NOTAS
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-secondary">
+                                N1: {{ t['nota1'] if t['nota1'] is not none else '—' }}
+                            </span>
+                            <span class="badge bg-secondary">
+                                N2: {{ t['nota2'] if t['nota2'] is not none else '—' }}
+                            </span>
+                            {% if t['nota_final'] is not none %}
+                            <span class="badge
+                                {% if t['nota_final'] >= t['nota_minima'] %}
+                                    bg-success
+                                {% else %}
+                                    bg-danger
+                                {% endif %}
+                                fs-6 px-3">
+                                Média: {{ t['nota_final'] }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-muted">
+                                Média: —
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="small text-muted mt-1">
+                            Mínima: {{ t['nota_minima'] }} pts
+                        </div>
+                    </div>
+
+                    <!-- FREQUENCIA -->
+                    <div class="col-md-2 text-center">
+                        <div class="small text-muted fw-semibold mb-1">
+                            📊 FREQUENCIA
+                        </div>
+                        {% if t['total_aulas'] and t['total_aulas'] > 0 %}
+                        {% set freq = ((t['presencas'] or 0) / t['total_aulas'] * 100)|round(1) %}
+                        <div class="fw-bold fs-5
+                            {% if freq >= 75 %}text-success
+                            {% else %}text-danger{% endif %}">
+                            {{ freq }}%
+                        </div>
+                        <div class="small text-muted">
+                            {{ t['presencas'] or 0 }}/{{ t['total_aulas'] }} aulas
+                        </div>
+                        {% if t['atividades'] and t['atividades'] > 0 %}
+                        <div class="small text-info mt-1">
+                            📝 {{ t['atividades'] }} ativ.
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="text-muted small">Sem aulas</div>
+                        {% endif %}
+
+                        <!-- SITUACAO FINAL -->
+                        <div class="mt-2">
+                            {% if t['status'] == 'aprovado' %}
+                            <span class="badge bg-success px-3">
+                                ✅ APROVADO
+                            </span>
+                            {% elif t['status'] == 'reprovado' %}
+                            <span class="badge bg-danger px-3">
+                                ❌ REPROVADO
+                            </span>
+                            {% else %}
+                            <span class="badge bg-primary px-3">
+                                📖 CURSANDO
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{% else %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5 text-muted">
+        <div class="fs-1 mb-2">📭</div>
+        <div class="fw-semibold">
+            Este aluno ainda nao tem matriculas.
+        </div>
+        <a href="/matriculas/nova" class="btn btn-primary mt-3">
+            ➕ Matricular Agora
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function filtrar(status) {
+    document.querySelectorAll(".trilha-item").forEach(function(el) {
+        if (status === "todos" || el.dataset.status === status) {
+            el.style.display = "";
+        } else {
+            el.style.display = "none";
+        }
+    });
+    document.querySelectorAll("[id^='btn_']").forEach(function(b) {
+        b.className = b.className
+            .replace("btn-primary","btn-outline-primary")
+            .replace("btn-success","btn-outline-success")
+            .replace("btn-danger","btn-outline-danger");
+    });
+    var ativo = document.getElementById("btn_" + status);
+    if (ativo) {
+        ativo.className = ativo.className
+            .replace("btn-outline-primary","btn-primary")
+            .replace("btn-outline-success","btn-success")
+            .replace("btn-outline-danger","btn-danger");
+    }
+}
+</script>
 
 {% endblock %}

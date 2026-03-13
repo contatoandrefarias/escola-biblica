@@ -1,147 +1,212 @@
 {% extends "base.html" %}
 {% block conteudo %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h4 class="fw-bold mb-1">
             📋 Chamada — {{ disciplina['nome'] }}
         </h4>
-        <span class="text-muted small">
-            📅 Data: {{ data_aula }}
+        <span class="text-muted small">📅 {{ data_aula }}</span>
+        {% if disciplina['tem_atividades'] %}
+        <span class="badge bg-warning text-dark ms-2">
+            📝 Com Atividade
         </span>
+        {% endif %}
     </div>
-    <a href="/presenca" class="btn btn-outline-secondary">
+    <a href="/presenca" class="btn btn-outline-secondary btn-sm">
         ← Voltar
     </a>
 </div>
 
 {% if alunos %}
-
 <form method="POST" action="/presenca/salvar">
     <input type="hidden" name="disciplina_id" value="{{ disciplina['id'] }}">
     <input type="hidden" name="data_aula" value="{{ data_aula }}">
 
-    <div class="d-flex gap-2 mb-3">
-        <button type="button" class="btn btn-success btn-sm"
-                onclick="marcarTodos(true)">
-            ✅ Marcar Todos Presentes
-        </button>
-        <button type="button" class="btn btn-danger btn-sm"
-                onclick="marcarTodos(false)">
-            ❌ Marcar Todos Ausentes
-        </button>
+    <!-- Botões rápidos -->
+    <div class="card mb-3 border-0 bg-light">
+        <div class="card-body py-2 d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-success btn-sm"
+                    onclick="marcarTodos('pres',true)">
+                ✅ Todos Presentes
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    onclick="marcarTodos('pres',false)">
+                ❌ Todos Ausentes
+            </button>
+            {% if disciplina['tem_atividades'] %}
+            <span class="border-start mx-1"></span>
+            <button type="button" class="btn btn-info btn-sm"
+                    onclick="marcarTodos('ativ',true)">
+                📝 Todos Fizeram Atividade
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="marcarTodos('ativ',false)">
+                📝 Nenhum Fez
+            </button>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="card">
-        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-            <span>👥 Lista de Alunos</span>
-            <span class="text-muted small">Total: {{ alunos|length }} aluno(s)</span>
+    <!-- Tabela de chamada -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">
+                👥 {{ alunos|length }} aluno(s)
+            </span>
+            <span class="text-muted small">
+                ✅ <span id="contPres">0</span> presente(s)
+                {% if disciplina['tem_atividades'] %}
+                | 📝 <span id="contAtiv">0</span> atividade(s)
+                {% endif %}
+            </span>
         </div>
         <div class="card-body p-0">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0 align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th style="width:50px" class="text-center">#</th>
+                        <th class="text-center" style="width:40px">#</th>
                         <th>Nome do Aluno</th>
-                        <th class="text-center" style="width:200px">Presença</th>
+                        <th class="text-center" style="width:160px">
+                            ✅ Presenca
+                        </th>
+                        {% if disciplina['tem_atividades'] %}
+                        <th class="text-center" style="width:160px">
+                            📝 Atividade
+                        </th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for a in alunos %}
-                    <tr id="linha_{{ loop.index }}">
-                        <td class="text-center text-muted fw-bold align-middle">{{ loop.index }}</td>
-                        <td class="fw-semibold align-middle">{{ a['nome'] }}</td>
-                        <td class="text-center align-middle">
-                            <div class="d-flex justify-content-center align-items-center gap-2">
+                    <tr id="linha_{{ loop.index }}"
+                        style="{% if a['presente'] == 1 %}background:#d1e7dd{% endif %}">
+
+                        <td class="text-center text-muted fw-bold">
+                            {{ loop.index }}
+                        </td>
+
+                        <td class="fw-semibold">{{ a['nome'] }}</td>
+
+                        <!-- PRESENÇA -->
+                        <td class="text-center">
+                            <div class="d-flex align-items-center
+                                        justify-content-center gap-2">
                                 <div class="form-check form-switch mb-0">
-                                    <input
-                                        class="form-check-input presenca-toggle"
-                                        type="checkbox"
-                                        role="switch"
-                                        name="presenca_{{ a['mat_id'] }}"
-                                        id="toggle_{{ loop.index }}"
-                                        data-index="{{ loop.index }}"
-                                        style="width:3rem; height:1.5rem; cursor:pointer"
-                                        onchange="atualizarLinha(this)"
-                                        {% if a['presente'] == 1 %}checked{% endif %}>
+                                    <input type="checkbox"
+                                           class="form-check-input pres-chk"
+                                           role="switch"
+                                           name="presenca_{{ a['mat_id'] }}"
+                                           id="pres_{{ loop.index }}"
+                                           data-idx="{{ loop.index }}"
+                                           style="width:2.8rem;height:1.4rem;cursor:pointer"
+                                           onchange="togglePres(this)"
+                                           {% if a['presente'] == 1 %}checked{% endif %}>
                                 </div>
-                                <span id="label_{{ loop.index }}" class="fw-semibold" style="min-width:85px">
+                                <span id="plbl_{{ loop.index }}"
+                                      class="small fw-semibold"
+                                      style="min-width:65px">
                                     {% if a['presente'] == 1 %}
-                                    <span class="text-success">✅ Presente</span>
+                                    <span class="text-success">Presente</span>
                                     {% else %}
-                                    <span class="text-danger">❌ Ausente</span>
+                                    <span class="text-danger">Ausente</span>
                                     {% endif %}
                                 </span>
                             </div>
                         </td>
+
+                        <!-- ATIVIDADE -->
+                        {% if disciplina['tem_atividades'] %}
+                        <td class="text-center">
+                            <div class="d-flex align-items-center
+                                        justify-content-center gap-2">
+                                <div class="form-check mb-0">
+                                    <input type="checkbox"
+                                           class="form-check-input ativ-chk"
+                                           name="atividade_{{ a['mat_id'] }}"
+                                           id="ativ_{{ loop.index }}"
+                                           data-idx="{{ loop.index }}"
+                                           style="width:1.4rem;height:1.4rem;cursor:pointer"
+                                           onchange="toggleAtiv(this)"
+                                           {% if a['fez_atividade'] == 1 %}checked{% endif %}>
+                                </div>
+                                <span id="albl_{{ loop.index }}"
+                                      class="small fw-semibold"
+                                      style="min-width:65px">
+                                    {% if a['fez_atividade'] == 1 %}
+                                    <span class="text-info">Fez ✔</span>
+                                    {% else %}
+                                    <span class="text-muted">Nao fez</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </td>
+                        {% endif %}
+
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <div class="card-footer">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted">
-                    <strong id="contPresentes">0</strong> presente(s) de {{ alunos|length }}
-                </span>
-                <button type="submit" class="btn btn-success px-5 fw-bold">
-                    💾 Salvar Chamada
-                </button>
-            </div>
+        <div class="card-footer d-flex justify-content-between">
+            <span class="text-muted small">
+                Disciplina: {{ disciplina['nome'] }} |
+                {{ disciplina['duracao_semanas'] }} semanas
+            </span>
+            <button type="submit" class="btn btn-primary px-4">
+                💾 Salvar Chamada
+            </button>
         </div>
     </div>
 </form>
 
 {% else %}
-
-<div class="card">
-    <div class="card-body text-center py-5 text-muted">
-        <div class="fs-1">😔</div>
-        <p class="mt-2 fw-semibold">Nenhum aluno matriculado nesta disciplina.</p>
-        <a href="/matriculas/nova" class="btn btn-primary">➕ Matricular Alunos</a>
-    </div>
+<div class="alert alert-warning">
+    Nenhum aluno matriculado nesta disciplina.
 </div>
-
 {% endif %}
 
 <script>
-function atualizarLinha(toggle) {
-    var idx   = toggle.dataset.index;
+function togglePres(el) {
+    var idx   = el.dataset.idx;
     var linha = document.getElementById("linha_" + idx);
-    var label = document.getElementById("label_" + idx);
-    if (toggle.checked) {
+    var lbl   = document.getElementById("plbl_" + idx);
+    if (el.checked) {
         linha.style.backgroundColor = "#d1e7dd";
-        label.innerHTML = '<span class="text-success">✅ Presente</span>';
+        lbl.innerHTML = '<span class="text-success">Presente</span>';
     } else {
         linha.style.backgroundColor = "";
-        label.innerHTML = '<span class="text-danger">❌ Ausente</span>';
+        lbl.innerHTML = '<span class="text-danger">Ausente</span>';
     }
-    contarPresentes();
+    atualizar();
 }
-
-function marcarTodos(presente) {
-    var toggles = document.querySelectorAll(".presenca-toggle");
-    for (var i = 0; i < toggles.length; i++) {
-        toggles[i].checked = presente;
-        atualizarLinha(toggles[i]);
+function toggleAtiv(el) {
+    var idx = el.dataset.idx;
+    var lbl = document.getElementById("albl_" + idx);
+    if (el.checked) {
+        lbl.innerHTML = '<span class="text-info">Fez \u2714</span>';
+    } else {
+        lbl.innerHTML = '<span class="text-muted">Nao fez</span>';
     }
+    atualizar();
 }
-
-function contarPresentes() {
-    var marcados = document.querySelectorAll(".presenca-toggle:checked").length;
-    document.getElementById("contPresentes").textContent = marcados;
+function marcarTodos(tipo, val) {
+    var cls = tipo === 'pres' ? '.pres-chk' : '.ativ-chk';
+    document.querySelectorAll(cls).forEach(function(el) {
+        el.checked = val;
+        if (tipo === 'pres') togglePres(el);
+        else toggleAtiv(el);
+    });
 }
-
-window.onload = function() {
-    contarPresentes();
-    var toggles = document.querySelectorAll(".presenca-toggle");
-    for (var i = 0; i < toggles.length; i++) {
-        if (toggles[i].checked) {
-            var idx = toggles[i].dataset.index;
-            document.getElementById("linha_" + idx).style.backgroundColor = "#d1e7dd";
-        }
-    }
-};
+function atualizar() {
+    var p = document.querySelectorAll(".pres-chk:checked").length;
+    var cp = document.getElementById("contPres");
+    if (cp) cp.textContent = p;
+    var a = document.querySelectorAll(".ativ-chk:checked").length;
+    var ca = document.getElementById("contAtiv");
+    if (ca) ca.textContent = a;
+}
+window.onload = function() { atualizar(); };
 </script>
 
 {% endblock %}
