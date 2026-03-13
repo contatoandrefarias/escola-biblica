@@ -1,93 +1,147 @@
-[2026-03-13 19:53:15 +0000] [1] [INFO] Starting gunicorn 25.1.0
-[2026-03-13 19:53:15 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080 (1)
-[2026-03-13 19:53:15 +0000] [1] [INFO] Using worker: sync
-[2026-03-13 19:53:15 +0000] [1] [INFO] Control socket listening at /app/gunicorn.ctl
-[2026-03-13 19:53:15 +0000] [3] [INFO] Booting worker with pid: 3
-  ✅ Usuário admin criado!
-  📧 Email: admin@escola.com
-  🔑 Senha: admin123
-  ⚠️  TROQUE A SENHA APÓS O PRIMEIRO LOGIN!
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
-    return current_app.ensure_sync(func)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/app.py", line 415, in chamada
-[2026-03-13 19:55:04,333] ERROR in app: Exception on /presenca/chamada [GET]
-    return render_template("chamada.html",
-Traceback (most recent call last):
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
-  File "/app/.venv/lib/python3.12/site-packages/flask/templating.py", line 151, in render_template
-    self.environment.handle_exception()
-    class="{% if a.get('presente') %}
-    return _render(app, template, context)
-  File "/app/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 942, in handle_exception
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
-    raise rewrite_traceback_stack(source=source)
-  File "/app/.venv/lib/python3.12/site-packages/jinja2/utils.py", line 92, in from_obj
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/templating.py", line 132, in _render
-  File "/app/templates/chamada.html", line 1, in top-level template code
-    if hasattr(obj, "jinja_pass_arg"):
-    {% extends "base.html" %}
-    rv = template.render(context)
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/templates/base.html", line 218, in top-level template code
-         ^^^^^^^^^^^^^^^^^^^^^^^^
-    {% block conteudo %}{% endblock %}
-  File "/app/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 1295, in render
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/templates/chamada.html", line 63, in block 'conteudo'
-jinja2.exceptions.UndefinedError: 'sqlite3.Row object' has no attribute 'get'
-[2026-03-13 19:55:08,918] ERROR in app: Exception on /presenca/chamada [GET]
-Traceback (most recent call last):
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
-    rv = self.dispatch_request()
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
-    return current_app.ensure_sync(func)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/app.py", line 415, in chamada
-    return render_template("chamada.html",
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/templating.py", line 151, in render_template
-    return _render(app, template, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/flask/templating.py", line 132, in _render
-    rv = template.render(context)
-         ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 1295, in render
-    self.environment.handle_exception()
-  File "/app/.venv/lib/python3.12/site-packages/jinja2/environment.py", line 942, in handle_exception
-    raise rewrite_traceback_stack(source=source)
-  File "/app/templates/chamada.html", line 1, in top-level template code
-    {% extends "base.html" %}
-  File "/app/templates/base.html", line 218, in top-level template code
-    {% block conteudo %}{% endblock %}
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/templates/chamada.html", line 63, in block 'conteudo'
-    class="{% if a.get('presente') %}
-    ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/.venv/lib/python3.12/site-packages/jinja2/utils.py", line 92, in from_obj
-    if hasattr(obj, "jinja_pass_arg"):
-jinja2.exceptions.UndefinedError: 'sqlite3.Row object' has no attribute 'get'
+{% extends "base.html" %}
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            📋 Chamada — {{ disciplina['nome'] }}
+        </h4>
+        <span class="text-muted small">
+            📅 Data: {{ data_aula }}
+        </span>
+    </div>
+    <a href="/presenca" class="btn btn-outline-secondary">
+        ← Voltar
+    </a>
+</div>
+
+{% if alunos %}
+
+<form method="POST" action="/presenca/salvar">
+    <input type="hidden" name="disciplina_id" value="{{ disciplina['id'] }}">
+    <input type="hidden" name="data_aula" value="{{ data_aula }}">
+
+    <div class="d-flex gap-2 mb-3">
+        <button type="button" class="btn btn-success btn-sm"
+                onclick="marcarTodos(true)">
+            ✅ Marcar Todos Presentes
+        </button>
+        <button type="button" class="btn btn-danger btn-sm"
+                onclick="marcarTodos(false)">
+            ❌ Marcar Todos Ausentes
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+            <span>👥 Lista de Alunos</span>
+            <span class="text-muted small">Total: {{ alunos|length }} aluno(s)</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width:50px" class="text-center">#</th>
+                        <th>Nome do Aluno</th>
+                        <th class="text-center" style="width:200px">Presença</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alunos %}
+                    <tr id="linha_{{ loop.index }}">
+                        <td class="text-center text-muted fw-bold align-middle">{{ loop.index }}</td>
+                        <td class="fw-semibold align-middle">{{ a['nome'] }}</td>
+                        <td class="text-center align-middle">
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                <div class="form-check form-switch mb-0">
+                                    <input
+                                        class="form-check-input presenca-toggle"
+                                        type="checkbox"
+                                        role="switch"
+                                        name="presenca_{{ a['mat_id'] }}"
+                                        id="toggle_{{ loop.index }}"
+                                        data-index="{{ loop.index }}"
+                                        style="width:3rem; height:1.5rem; cursor:pointer"
+                                        onchange="atualizarLinha(this)"
+                                        {% if a['presente'] == 1 %}checked{% endif %}>
+                                </div>
+                                <span id="label_{{ loop.index }}" class="fw-semibold" style="min-width:85px">
+                                    {% if a['presente'] == 1 %}
+                                    <span class="text-success">✅ Presente</span>
+                                    {% else %}
+                                    <span class="text-danger">❌ Ausente</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">
+                    <strong id="contPresentes">0</strong> presente(s) de {{ alunos|length }}
+                </span>
+                <button type="submit" class="btn btn-success px-5 fw-bold">
+                    💾 Salvar Chamada
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% else %}
+
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <div class="fs-1">😔</div>
+        <p class="mt-2 fw-semibold">Nenhum aluno matriculado nesta disciplina.</p>
+        <a href="/matriculas/nova" class="btn btn-primary">➕ Matricular Alunos</a>
+    </div>
+</div>
+
+{% endif %}
+
+<script>
+function atualizarLinha(toggle) {
+    var idx   = toggle.dataset.index;
+    var linha = document.getElementById("linha_" + idx);
+    var label = document.getElementById("label_" + idx);
+    if (toggle.checked) {
+        linha.style.backgroundColor = "#d1e7dd";
+        label.innerHTML = '<span class="text-success">✅ Presente</span>';
+    } else {
+        linha.style.backgroundColor = "";
+        label.innerHTML = '<span class="text-danger">❌ Ausente</span>';
+    }
+    contarPresentes();
+}
+
+function marcarTodos(presente) {
+    var toggles = document.querySelectorAll(".presenca-toggle");
+    for (var i = 0; i < toggles.length; i++) {
+        toggles[i].checked = presente;
+        atualizarLinha(toggles[i]);
+    }
+}
+
+function contarPresentes() {
+    var marcados = document.querySelectorAll(".presenca-toggle:checked").length;
+    document.getElementById("contPresentes").textContent = marcados;
+}
+
+window.onload = function() {
+    contarPresentes();
+    var toggles = document.querySelectorAll(".presenca-toggle");
+    for (var i = 0; i < toggles.length; i++) {
+        if (toggles[i].checked) {
+            var idx = toggles[i].dataset.index;
+            document.getElementById("linha_" + idx).style.backgroundColor = "#d1e7dd";
+        }
+    }
+};
+</script>
+
+{% endblock %}
