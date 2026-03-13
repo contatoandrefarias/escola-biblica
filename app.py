@@ -1,7 +1,5 @@
-# ================================================
 # app.py
-# Servidor Web Principal com Login
-# ================================================
+import os
 from flask import (Flask, render_template, request,
                    redirect, url_for, flash)
 from flask_login import (LoginManager, login_user,
@@ -10,27 +8,29 @@ from flask_login import (LoginManager, login_user,
 from werkzeug.security import generate_password_hash
 from database import conectar, inicializar_banco
 from auth import Usuario, carregar_usuario, verificar_login
-import os
 
+# ── Criar o app ────────────────────────────────
 app = Flask(__name__)
-
-# Chave secreta — MUDE EM PRODUÇÃO!
 app.secret_key = os.environ.get(
     "SECRET_KEY",
-    "escola_biblica_nova_alianca_2026_chave_secreta"
+    "escola_biblica_chave_2026"
 )
 
-# ── Configuração do Flask-Login ────────────────
+# ── Flask-Login ────────────────────────────────
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view        = "login"
-login_manager.login_message     = "⚠️ Faça login para acessar o sistema."
+login_manager.login_view             = "login"
+login_manager.login_message          = "Faça login para continuar."
 login_manager.login_message_category = "warning"
-
 
 @login_manager.user_loader
 def load_user(user_id):
     return carregar_usuario(user_id)
+
+# ══════════════════════════════════════════════
+# INICIALIZAR O BANCO AQUI — ANTES DE TUDO!
+# ══════════════════════════════════════════════
+inicializar_banco()
 
 
 # ╔══════════════════════════════════════════════╗
@@ -38,7 +38,6 @@ def load_user(user_id):
 # ╚══════════════════════════════════════════════╝
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # Se já está logado, vai para o painel
     if current_user.is_authenticated:
         return redirect(url_for("index"))
 
@@ -47,11 +46,9 @@ def login():
         senha = request.form.get("senha", "")
 
         usuario = verificar_login(email, senha)
-
         if usuario:
             login_user(usuario, remember=True)
             flash(f"Bem-vindo(a), {usuario.nome}! 🙏", "sucesso")
-            # Redireciona para a página que tentou acessar
             proxima = request.args.get("next")
             return redirect(proxima or url_for("index"))
         else:
@@ -148,13 +145,13 @@ def novo_aluno():
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO alunos
-                (nome, telefone, email, data_nascimento, membro_igreja)
+                (nome, telefone, email,
+                 data_nascimento, membro_igreja)
             VALUES (?, ?, ?, ?, ?)
         """, (nome, telefone, email, data_nasc, membro))
         conn.commit()
         conn.close()
-
-        flash(f"Aluno '{nome}' cadastrado com sucesso!", "sucesso")
+        flash(f"Aluno '{nome}' cadastrado!", "sucesso")
         return redirect(url_for("alunos"))
 
     return render_template("novo_aluno.html")
@@ -179,8 +176,7 @@ def editar_aluno(id):
         """, (nome, telefone, email, membro, id))
         conn.commit()
         conn.close()
-
-        flash("Aluno atualizado com sucesso!", "sucesso")
+        flash("Aluno atualizado!", "sucesso")
         return redirect(url_for("alunos"))
 
     cursor.execute("SELECT * FROM alunos WHERE id=?", (id,))
@@ -228,9 +224,12 @@ def trilha(id):
     trilha_dados = cursor.fetchall()
     conn.close()
 
-    aprovadas  = sum(1 for t in trilha_dados if t["status"] == "aprovado")
-    reprovadas = sum(1 for t in trilha_dados if t["status"] == "reprovado")
-    cursando   = sum(1 for t in trilha_dados if t["status"] == "cursando")
+    aprovadas  = sum(1 for t in trilha_dados
+                     if t["status"] == "aprovado")
+    reprovadas = sum(1 for t in trilha_dados
+                     if t["status"] == "reprovado")
+    cursando   = sum(1 for t in trilha_dados
+                     if t["status"] == "cursando")
 
     return render_template("trilha.html",
         aluno      = aluno,
@@ -262,7 +261,9 @@ def novo_professor():
         nome          = request.form.get("nome", "").strip()
         telefone      = request.form.get("telefone", "").strip()
         email         = request.form.get("email", "").strip()
-        especialidade = request.form.get("especialidade", "").strip()
+        especialidade = request.form.get(
+            "especialidade", ""
+        ).strip()
 
         if not nome:
             flash("Nome é obrigatório!", "erro")
@@ -277,7 +278,6 @@ def novo_professor():
         """, (nome, telefone, email, especialidade))
         conn.commit()
         conn.close()
-
         flash(f"Professor '{nome}' cadastrado!", "sucesso")
         return redirect(url_for("professores"))
 
@@ -329,419 +329,11 @@ def nova_disciplina():
               float(nota_min), float(freq_min), prof_id))
         conn.commit()
         conn.close()
-
         flash(f"Disciplina '{nome}' cadastrada!", "sucesso")
         return redirect(url_for("disciplinas"))
 
     conn   = conectar()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM professores ORDER BY nome")
-    profs  = cursor.fetchall()
-    conn.close()
-    return render_template("nova_disciplina.html", professores=profs)
+    pr
 
-
-# ╔══════════════════════════════════════════════╗
-# ║               MATRÍCULAS                     ║
-# ╚══════════════════════════════════════════════╝
-@app.route("/matriculas")
-@login_required
-def matriculas():
-    conn   = conectar()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT m.id, a.nome as aluno, d.nome as disciplina,
-               m.nota1, m.nota2, m.nota_final, m.status
-        FROM matriculas m
-        JOIN alunos a      ON m.aluno_id      = a.id
-        JOIN disciplinas d ON m.disciplina_id = d.id
-        ORDER BY a.nome
-    """)
-    lista = cursor.fetchall()
-    conn.close()
-    return render_template("matriculas.html", matriculas=lista)
-
-
-@app.route("/matriculas/nova", methods=["GET", "POST"])
-@login_required
-def nova_matricula():
-    if request.method == "POST":
-        aluno_id = request.form.get("aluno_id")
-        disc_id  = request.form.get("disciplina_id")
-
-        conn   = conectar()
-        cursor = conn.cursor()
-        try:
-            cursor.execute("""
-                INSERT INTO matriculas (aluno_id, disciplina_id)
-                VALUES (?, ?)
-            """, (aluno_id, disc_id))
-            conn.commit()
-            flash("Matrícula realizada com sucesso!", "sucesso")
-        except Exception:
-            flash("Aluno já matriculado nesta disciplina!", "erro")
-        conn.close()
-        return redirect(url_for("matriculas"))
-
-    conn   = conectar()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, nome FROM alunos ORDER BY nome")
-    alunos_lista = cursor.fetchall()
-    cursor.execute(
-        "SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome"
-    )
-    disc_lista = cursor.fetchall()
-    conn.close()
-
-    return render_template("nova_matricula.html",
-        alunos      = alunos_lista,
-        disciplinas = disc_lista
-    )
-
-
-@app.route("/matriculas/<int:id>/notas", methods=["GET", "POST"])
-@login_required
-def lancar_notas(id):
-    conn   = conectar()
-    cursor = conn.cursor()
-
-    if request.method == "POST":
-        nota1_str = request.form.get("nota1", "").strip()
-        nota2_str = request.form.get("nota2", "").strip()
-
-        cursor.execute("""
-            SELECT m.*, d.nota_minima
-            FROM matriculas m
-            JOIN disciplinas d ON m.disciplina_id = d.id
-            WHERE m.id = ?
-        """, (id,))
-        mat = cursor.fetchone()
-
-        try:
-            n1 = float(nota1_str.replace(",", ".")) \
-                 if nota1_str else mat["nota1"]
-            n2 = float(nota2_str.replace(",", ".")) \
-                 if nota2_str else mat["nota2"]
-        except ValueError:
-            flash("Nota inválida! Use números entre 0 e 10.", "erro")
-            conn.close()
-            return redirect(url_for("lancar_notas", id=id))
-
-        nota_final = None
-        status     = mat["status"]
-
-        if n1 is not None and n2 is not None:
-            nota_final = round((n1 + n2) / 2, 2)
-            status = "aprovado" \
-                     if nota_final >= mat["nota_minima"] \
-                     else "reprovado"
-
-        cursor.execute("""
-            UPDATE matriculas
-            SET nota1=?, nota2=?, nota_final=?, status=?
-            WHERE id=?
-        """, (n1, n2, nota_final, status, id))
-        conn.commit()
-        conn.close()
-
-        flash("Notas salvas com sucesso!", "sucesso")
-        return redirect(url_for("matriculas"))
-
-    cursor.execute("""
-        SELECT m.*, a.nome as aluno, d.nome as disciplina,
-               d.nota_minima
-        FROM matriculas m
-        JOIN alunos a      ON m.aluno_id      = a.id
-        JOIN disciplinas d ON m.disciplina_id = d.id
-        WHERE m.id = ?
-    """, (id,))
-    mat = cursor.fetchone()
-    conn.close()
-
-    if not mat:
-        flash("Matrícula não encontrada!", "erro")
-        return redirect(url_for("matriculas"))
-
-    return render_template("notas.html", matricula=mat)
-
-
-# ╔══════════════════════════════════════════════╗
-# ║                PRESENÇA                      ║
-# ╚══════════════════════════════════════════════╝
-@app.route("/presenca", methods=["GET", "POST"])
-@login_required
-def presenca():
-    conn   = conectar()
-    cursor = conn.cursor()
-
-    if request.method == "POST":
-        disc_id   = request.form.get("disciplina_id")
-        data_aula = request.form.get("data_aula")
-
-        cursor.execute("""
-            SELECT m.id as mat_id, a.nome
-            FROM matriculas m
-            JOIN alunos a ON m.aluno_id = a.id
-            WHERE m.disciplina_id = ? AND m.status = 'cursando'
-            ORDER BY a.nome
-        """, (disc_id,))
-        matriculados = cursor.fetchall()
-
-        for m in matriculados:
-            presente = 1 if request.form.get(
-                f"presenca_{m['mat_id']}"
-            ) else 0
-
-            cursor.execute("""
-                SELECT id FROM presencas
-                WHERE matricula_id = ? AND data_aula = ?
-            """, (m["mat_id"], data_aula))
-            existe = cursor.fetchone()
-
-            if existe:
-                cursor.execute(
-                    "UPDATE presencas SET presente=? WHERE id=?",
-                    (presente, existe["id"])
-                )
-            else:
-                cursor.execute("""
-                    INSERT INTO presencas
-                        (matricula_id, data_aula, presente)
-                    VALUES (?, ?, ?)
-                """, (m["mat_id"], data_aula, presente))
-
-        conn.commit()
-        flash("Chamada registrada com sucesso!", "sucesso")
-        conn.close()
-        return redirect(url_for("presenca"))
-
-    cursor.execute(
-        "SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome"
-    )
-    disc_lista = cursor.fetchall()
-    conn.close()
-    return render_template("presenca.html", disciplinas=disc_lista)
-
-
-@app.route("/presenca/chamada")
-@login_required
-def chamada():
-    disc_id = request.args.get("disciplina_id")
-    if not disc_id:
-        return redirect(url_for("presenca"))
-
-    conn   = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT m.id as mat_id, a.nome
-        FROM matriculas m
-        JOIN alunos a ON m.aluno_id = a.id
-        WHERE m.disciplina_id = ? AND m.status = 'cursando'
-        ORDER BY a.nome
-    """, (disc_id,))
-    alunos_disc = cursor.fetchall()
-
-    cursor.execute(
-        "SELECT id, nome FROM disciplinas WHERE id=?",
-        (disc_id,)
-    )
-    disc = cursor.fetchone()
-    conn.close()
-
-    return render_template("chamada.html",
-        alunos     = alunos_disc,
-        disciplina = disc
-    )
-
-
-# ╔══════════════════════════════════════════════╗
-# ║               RELATÓRIOS                     ║
-# ╚══════════════════════════════════════════════╝
-@app.route("/relatorios")
-@login_required
-def relatorios():
-    conn   = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT a.nome as aluno, d.nome as disciplina,
-               m.nota_final, m.status
-        FROM matriculas m
-        JOIN alunos a      ON m.aluno_id      = a.id
-        JOIN disciplinas d ON m.disciplina_id = d.id
-        ORDER BY m.status, a.nome
-    """)
-    todas = cursor.fetchall()
-
-    cursor.execute("""
-        SELECT a.nome,
-               COUNT(m.id) as total,
-               SUM(CASE WHEN m.status='aprovado' THEN 1 ELSE 0 END)
-                   as aprovadas,
-               AVG(m.nota_final) as media
-        FROM alunos a
-        JOIN matriculas m ON m.aluno_id = a.id
-        GROUP BY a.id, a.nome
-        HAVING total > 0
-        ORDER BY media DESC
-    """)
-    ranking = cursor.fetchall()
-    conn.close()
-
-    return render_template("relatorios.html",
-        matriculas = todas,
-        ranking    = ranking
-    )
-
-
-# ╔══════════════════════════════════════════════╗
-# ║               USUÁRIOS (ADMIN)               ║
-# ╚══════════════════════════════════════════════╝
-@app.route("/usuarios")
-@login_required
-def usuarios():
-    # Apenas admin pode gerenciar usuários
-    if not current_user.is_admin:
-        flash("Acesso negado! Apenas administradores.", "erro")
-        return redirect(url_for("index"))
-
-    conn   = conectar()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM usuarios ORDER BY nome")
-    lista  = cursor.fetchall()
-    conn.close()
-    return render_template("usuarios.html", usuarios=lista)
-
-
-@app.route("/usuarios/novo", methods=["GET", "POST"])
-@login_required
-def novo_usuario():
-    if not current_user.is_admin:
-        flash("Acesso negado!", "erro")
-        return redirect(url_for("index"))
-
-    if request.method == "POST":
-        nome   = request.form.get("nome", "").strip()
-        email  = request.form.get("email", "").strip()
-        senha  = request.form.get("senha", "")
-        perfil = request.form.get("perfil", "usuario")
-
-        if not nome or not email or not senha:
-            flash("Todos os campos são obrigatórios!", "erro")
-            return redirect(url_for("novo_usuario"))
-
-        if len(senha) < 6:
-            flash("Senha deve ter no mínimo 6 caracteres!", "erro")
-            return redirect(url_for("novo_usuario"))
-
-        conn   = conectar()
-        cursor = conn.cursor()
-        try:
-            cursor.execute("""
-                INSERT INTO usuarios (nome, email, senha_hash, perfil)
-                VALUES (?, ?, ?, ?)
-            """, (nome, email,
-                  generate_password_hash(senha), perfil))
-            conn.commit()
-            flash(f"Usuário '{nome}' criado com sucesso!", "sucesso")
-        except Exception:
-            flash("E-mail já cadastrado!", "erro")
-        conn.close()
-        return redirect(url_for("usuarios"))
-
-    return render_template("novo_usuario.html")
-
-
-@app.route("/usuarios/<int:id>/toggle")
-@login_required
-def toggle_usuario(id):
-    """Ativa ou desativa um usuário."""
-    if not current_user.is_admin:
-        flash("Acesso negado!", "erro")
-        return redirect(url_for("index"))
-
-    if id == current_user.id:
-        flash("Você não pode desativar sua própria conta!", "erro")
-        return redirect(url_for("usuarios"))
-
-    conn   = conectar()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT ativo FROM usuarios WHERE id=?", (id,)
-    )
-    u = cursor.fetchone()
-    if u:
-        novo = 0 if u["ativo"] else 1
-        cursor.execute(
-            "UPDATE usuarios SET ativo=? WHERE id=?",
-            (novo, id)
-        )
-        conn.commit()
-        status = "ativado" if novo else "desativado"
-        flash(f"Usuário {status} com sucesso!", "sucesso")
-    conn.close()
-    return redirect(url_for("usuarios"))
-
-
-@app.route("/minha-conta", methods=["GET", "POST"])
-@login_required
-def minha_conta():
-    """Permite ao usuário trocar sua própria senha."""
-    if request.method == "POST":
-        senha_atual = request.form.get("senha_atual", "")
-        nova_senha  = request.form.get("nova_senha", "")
-        confirmar   = request.form.get("confirmar", "")
-
-        from auth import verificar_login
-        u = verificar_login(current_user.email, senha_atual)
-
-        if not u:
-            flash("Senha atual incorreta!", "erro")
-            return redirect(url_for("minha_conta"))
-
-        if nova_senha != confirmar:
-            flash("As senhas não coincidem!", "erro")
-            return redirect(url_for("minha_conta"))
-
-        if len(nova_senha) < 6:
-            flash("Nova senha deve ter no mínimo 6 caracteres!", "erro")
-            return redirect(url_for("minha_conta"))
-
-        conn   = conectar()
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE usuarios SET senha_hash=? WHERE id=?",
-            (generate_password_hash(nova_senha), current_user.id)
-        )
-        conn.commit()
-        conn.close()
-        flash("Senha alterada com sucesso! 🔐", "sucesso")
-        return redirect(url_for("index"))
-
-    return render_template("minha_conta.html")
-
-# ══════════════════════════════════════════
-# INICIALIZAÇÃO DO BANCO E CONFIGURAÇÃO
-# ══════════════════════════════════════════
-import os
-
-# Inicializa o banco ao carregar o arquivo
-inicializar_banco()
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print("\n" + "="*50)
-    print("  ✝️  ESCOLA BÍBLICA - NOVA ALIANÇA")
-    print(f"  🌐 Acesse: http://localhost:{port}")
-    print("  📧 Login : admin@escola.com")
-    print("  🔑 Senha : admin123")
-    print("="*50 + "\n")
-    app.run(
-        host  = "0.0.0.0",
-        port  = port,
-        debug = False
-    )
-
-
-    
