@@ -10,6 +10,7 @@
     <div class="card-header">Dados da Disciplina</div>
     <div class="card-body">
         <form method="POST">
+
             <div class="mb-3">
                 <label class="form-label fw-semibold">
                     Nome <span class="text-danger">*</span>
@@ -20,7 +21,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Descrição</label>
+                <label class="form-label fw-semibold">Descricao</label>
                 <textarea name="descricao" class="form-control" rows="2"
                     placeholder="Breve descricao da disciplina">
                 </textarea>
@@ -28,7 +29,7 @@
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">
-                    📅 Duração da Disciplina
+                    📅 Duracao da Disciplina
                 </label>
                 <div class="input-group">
                     <input type="number" name="duracao_semanas"
@@ -46,7 +47,7 @@
             <div class="row g-3 mb-3">
                 <div class="col-6">
                     <label class="form-label fw-semibold">
-                        Nota Mínima
+                        Nota Minima
                     </label>
                     <div class="input-group">
                         <input type="number" name="nota_minima"
@@ -57,7 +58,7 @@
                 </div>
                 <div class="col-6">
                     <label class="form-label fw-semibold">
-                        Freq. Mínima
+                        Freq. Minima
                     </label>
                     <div class="input-group">
                         <input type="number" name="frequencia_minima"
@@ -71,5 +72,46 @@
             <div class="mb-3">
                 <label class="form-label fw-semibold">Professor</label>
                 <select name="professor_id" class="form-select">
-                    <option value="">
+                    <option value="">— Sem professor —</option>
+                    {% for p in professores %}
+                    <option value="{{ p['id'] }}">{{ p['nome'] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
+            <div class="mb-4">
+                <div class="card border-warning">
+                    <div class="card-body py-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox"
+                                   name="tem_atividades"
+                                   class="form-check-input"
+                                   id="tem_atividades"
+                                   style="width:2.8rem;height:1.4rem;cursor:pointer">
+                            <label class="form-check-label fw-semibold ms-2"
+                                   for="tem_atividades">
+                                📝 Esta disciplina tem atividades por aula
+                            </label>
+                        </div>
+                        <div class="form-text ms-5 mt-1">
+                            Se ativado, na chamada aparecera uma coluna
+                            para marcar quem realizou a atividade da aula.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning px-4">
+                    💾 Salvar Disciplina
+                </button>
+                <a href="/disciplinas" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}
