@@ -3,48 +3,30 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0">⚙️ Minha Conta</h4>
+    <a href="/" class="btn btn-outline-secondary">← Voltar</a>
 </div>
 
-<!-- Informações do usuário -->
-<div class="card mb-4" style="max-width:500px">
-    <div class="card-header">Suas Informações</div>
-    <div class="card-body">
-        <p class="mb-2">
-            <strong>Nome:</strong> {{ current_user.nome }}
-        </p>
-        <p class="mb-2">
-            <strong>E-mail:</strong> {{ current_user.email }}
-        </p>
-        <p class="mb-0">
-            <strong>Perfil:</strong>
-            {% if current_user.is_admin %}
-                <span class="badge bg-danger">👑 Administrador</span>
-            {% else %}
-                <span class="badge bg-secondary">👤 Usuário</span>
-            {% endif %}
-        </p>
+<div class="card shadow-sm" style="max-width:440px">
+    <div class="card-header fw-semibold">
+        🔑 Alterar Senha
     </div>
-</div>
-
-<!-- Trocar senha -->
-<div class="card" style="max-width:500px">
-    <div class="card-header">🔐 Alterar Senha</div>
     <div class="card-body">
         <form method="POST">
-
             <div class="mb-3">
-                <label class="form-label fw-semibold">Senha Atual</label>
+                <label class="form-label fw-semibold">
+                    Senha Atual
+                </label>
                 <input type="password" name="senha_atual"
                        class="form-control" required>
             </div>
-
             <div class="mb-3">
-                <label class="form-label fw-semibold">Nova Senha</label>
+                <label class="form-label fw-semibold">
+                    Nova Senha
+                </label>
                 <input type="password" name="nova_senha"
-                       class="form-control" required minlength="6"
-                       placeholder="Mínimo 6 caracteres">
+                       class="form-control" required
+                       minlength="6">
             </div>
-
             <div class="mb-4">
                 <label class="form-label fw-semibold">
                     Confirmar Nova Senha
@@ -52,13 +34,14 @@
                 <input type="password" name="confirmar"
                        class="form-control" required>
             </div>
-
-            <button type="submit" class="btn btn-primary px-4">
-                <i class="bi bi-lock me-1"></i>
-                Alterar Senha
+            <button type="submit" class="btn btn-warning w-100">
+                💾 Alterar Senha
             </button>
-
         </form>
+    </div>
+    <div class="card-footer text-muted small">
+        Logado como: <strong>{{ current_user.nome }}</strong>
+        ({{ current_user.email }})
     </div>
 </div>
 

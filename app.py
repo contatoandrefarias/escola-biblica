@@ -671,6 +671,101 @@ def novo_usuario():
         return redirect(url_for("usuarios"))
     return render_template("novo_usuario.html")
 
+@app.route("/minha-conta", methods=["GET", "POST"])
+@login_required
+def minha_conta():
+    if request.method == "POST":
+        senha_atual = request.form.get("senha_atual", "")
+        nova_senha  = request.form.get("nova_senha", "")
+        confirmar   = request.form.get("confirmar", "")
+        u = verificar_login(current_user.email, senha_atual)
+        if not u:
+            flash("Senha atual incorreta!", "erro")
+            return redirect(url_for("minha_conta"))
+        if nova_senha != confirmar:
+            flash("As senhas nao coincidem!", "erro")
+            return redirect(url_for("minha_conta"))
+        if len(nova_senha) < 6:
+            flash("Senha: minimo 6 caracteres!", "erro")
+            return redirect(url_for("minha_conta"))
+        conn   = conectar()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE usuarios SET senha_hash=? WHERE id=?",
+            (generate_password_hash(nova_senha), current_user.id))
+        conn.commit()
+        conn.close()
+        flash("Senha alterada com sucesso!", "sucesso")
+        return redirect(url_for("index"))
+    return render_template("minha_conta.html")
 
-@app.route("/m
 
+@app.route("/usuarios")
+@login_required
+def usuarios():
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM usuarios ORDER BY nome")
+    lista = cursor.fetchall()
+    conn.close()
+    return render_template("usuarios.html", usuarios=lista)
+
+
+@app.route("/usuarios/novo", methods=["GET", "POST"])
+@login_required
+def novo_usuario():
+    if request.method == "POST":
+        nome   = request.form.get("nome", "").strip()
+        email  = request.form.get("email", "").strip()
+        senha  = request.form.get("senha", "")
+        perfil = request.form.get("perfil", "usuario")
+        if not nome or not email or not senha:
+            flash("Todos os campos sao obrigatorios!", "erro")
+            return redirect(url_for("novo_usuario"))
+        conn   = conectar()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO usuarios (nome, email, senha_hash, perfil)
+                VALUES (?, ?, ?, ?)
+            """, (nome, email,
+                  generate_password_hash(senha), perfil))
+            conn.commit()
+            flash(f"Usuario '{nome}' criado!", "sucesso")
+        except Exception:
+            flash("E-mail ja cadastrado!", "erro")
+        conn.close()
+        return redirect(url_for("usuarios"))
+    return render_template("novo_usuario.html")
+
+
+@app.route("/relatorios")
+@login_required
+def relatorios():
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT
+            a.nome as aluno,
+            d.nome as disciplina,
+            m.nota_final,
+            m.status,
+            m.data_inicio,
+            m.data_conclusao,
+            COUNT(p.id)     as total_aulas,
+            SUM(p.presente) as presencas
+        FROM matriculas m
+        JOIN alunos a      ON m.aluno_id      = a.id
+        JOIN disciplinas d ON m.disciplina_id = d.id
+        LEFT JOIN presencas p ON p.matricula_id = m.id
+        GROUP BY m.id
+        ORDER BY a.nome
+    """)
+    dados = cursor.fetchall()
+    conn.close()
+    return render_template("relatorios.html", dados=dados)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
