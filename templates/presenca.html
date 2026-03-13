@@ -2,13 +2,15 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">📅 Registrar Presença</h4>
+    <h4 class="fw-bold mb-0">📅 Registrar Chamada</h4>
 </div>
 
-<div class="card" style="max-width:500px">
-    <div class="card-header">Selecionar Disciplina e Data</div>
+<div class="card mb-4" style="max-width:500px">
+    <div class="card-header fw-semibold">
+        📚 Selecionar Disciplina e Data
+    </div>
     <div class="card-body">
-        <form method="POST">
+        <form method="GET" action="/presenca/chamada">
             <div class="mb-3">
                 <label class="form-label fw-semibold">
                     Disciplina <span class="text-danger">*</span>
@@ -33,8 +35,8 @@
                        class="form-control" required
                        value="{{ hoje }}">
             </div>
-            <button type="submit" class="btn btn-info w-100">
-                📋 Registrar Chamada
+            <button type="submit" class="btn btn-primary w-100">
+                📋 Abrir Chamada
             </button>
         </form>
     </div>

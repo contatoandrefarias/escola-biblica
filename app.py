@@ -386,24 +386,77 @@ def presenca():
 @app.route("/presenca/chamada")
 @login_required
 def chamada():
-    disc_id = request.args.get("disciplina_id")
-    if not disc_id:
+    disc_id   = request.args.get("disciplina_id")
+    data_aula = request.args.get("data_aula")
+    if not disc_id or not data_aula:
+        flash("Selecione a disciplina e a data!", "erro")
         return redirect(url_for("presenca"))
-    conn = conectar()
+    conn   = conectar()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT m.id as mat_id, a.nome
+        SELECT m.id as mat_id, a.nome,
+               COALESCE(p.presente, 0) as presente
         FROM matriculas m
         JOIN alunos a ON m.aluno_id = a.id
-        WHERE m.disciplina_id=? AND m.status='cursando'
+        LEFT JOIN presencas p
+            ON p.matricula_id = m.id
+            AND p.data_aula   = ?
+        WHERE m.disciplina_id = ?
+        AND m.status = 'cursando'
         ORDER BY a.nome
-    """, (disc_id,))
+    """, (data_aula, disc_id))
     alunos_disc = cursor.fetchall()
-    cursor.execute("SELECT id, nome FROM disciplinas WHERE id=?", (disc_id,))
+    cursor.execute(
+        "SELECT id, nome FROM disciplinas WHERE id=?",
+        (disc_id,)
+    )
     disc = cursor.fetchone()
     conn.close()
-    return render_template("chamada.html", alunos=alunos_disc, disciplina=disc)
+    return render_template("chamada.html",
+        alunos     = alunos_disc,
+        disciplina = disc,
+        data_aula  = data_aula
+    )
 
+
+@app.route("/presenca/salvar", methods=["POST"])
+@login_required
+def salvar_presenca():
+    disc_id   = request.form.get("disciplina_id")
+    data_aula = request.form.get("data_aula")
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT m.id as mat_id
+        FROM matriculas m
+        WHERE m.disciplina_id = ?
+        AND m.status = 'cursando'
+    """, (disc_id,))
+    matriculados = cursor.fetchall()
+    for m in matriculados:
+        presente = 1 if request.form.get(
+            f"presenca_{m['mat_id']}"
+        ) else 0
+        cursor.execute("""
+            SELECT id FROM presencas
+            WHERE matricula_id=? AND data_aula=?
+        """, (m["mat_id"], data_aula))
+        existe = cursor.fetchone()
+        if existe:
+            cursor.execute(
+                "UPDATE presencas SET presente=? WHERE id=?",
+                (presente, existe["id"])
+            )
+        else:
+            cursor.execute("""
+                INSERT INTO presencas
+                    (matricula_id, data_aula, presente)
+                VALUES (?, ?, ?)
+            """, (m["mat_id"], data_aula, presente))
+    conn.commit()
+    conn.close()
+    flash("Chamada salva com sucesso! ✅", "sucesso")
+    return redirect(url_for("presenca"))
 
 @app.route("/relatorios")
 @login_required

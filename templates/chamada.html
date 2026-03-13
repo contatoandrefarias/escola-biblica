@@ -2,52 +2,188 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">
-        📋 Chamada — {{ disciplina['nome'] }}
-    </h4>
+    <div>
+        <h4 class="fw-bold mb-1">
+            📋 Chamada — {{ disciplina['nome'] }}
+        </h4>
+        <span class="text-muted small">
+            📅 Data: {{ data_aula }}
+        </span>
+    </div>
     <a href="/presenca" class="btn btn-outline-secondary">
         ← Voltar
     </a>
 </div>
 
-<div class="card">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Aluno</th>
-                    <th class="text-center">Presente</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if alunos %}
-                    {% for a in alunos %}
+{% if alunos %}
+<form method="POST" action="/presenca/salvar">
+    <input type="hidden" name="disciplina_id"
+           value="{{ disciplina['id'] }}">
+    <input type="hidden" name="data_aula"
+           value="{{ data_aula }}">
+
+    <!-- Botões rápidos -->
+    <div class="d-flex gap-2 mb-3">
+        <button type="button"
+                class="btn btn-success btn-sm"
+                onclick="marcarTodos(true)">
+            ✅ Marcar Todos Presentes
+        </button>
+        <button type="button"
+                class="btn btn-danger btn-sm"
+                onclick="marcarTodos(false)">
+            ❌ Marcar Todos Ausentes
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header fw-semibold d-flex justify-content-between">
+            <span>👥 Lista de Alunos</span>
+            <span class="text-muted small">
+                Total: {{ alunos|length }} aluno(s)
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
                     <tr>
-                        <td class="fw-semibold">{{ a['nome'] }}</td>
-                        <td class="text-center">
-                            {% if a.get('presente') %}
-                                <span class="badge bg-success">
-                                    ✅ Presente
-                                </span>
-                            {% else %}
-                                <span class="badge bg-danger">
-                                    ❌ Faltou
-                                </span>
-                            {% endif %}
+                        <th style="width:60px" class="text-center">
+                            #
+                        </th>
+                        <th>Nome do Aluno</th>
+                        <th class="text-center"
+                            style="width:180px">
+                            Presença
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alunos %}
+                    <tr id="linha_{{ loop.index }}"
+                        class="{% if a.get('presente') %}
+                                   table-success
+                               {% endif %}">
+                        <td class="text-center text-muted fw-bold">
+                            {{ loop.index }}
+                        </td>
+                        <td class="fw-semibold align-middle">
+                            {{ a['nome'] }}
+                        </td>
+                        <td class="text-center align-middle">
+
+                            <!-- Toggle Switch -->
+                            <div class="form-check form-switch
+                                        d-flex justify-content-center
+                                        align-items-center gap-2 mb-0">
+                                <input
+                                    class="form-check-input presenca-toggle"
+                                    type="checkbox"
+                                    role="switch"
+                                    name="presenca_{{ a['mat_id'] }}"
+                                    id="toggle_{{ a['mat_id'] }}"
+                                    style="width:3rem; height:1.5rem;
+                                           cursor:pointer"
+                                    data-linha="linha_{{ loop.index }}"
+                                    {% if a.get('presente') %}
+                                        checked
+                                    {% endif %}
+                                    onchange="atualizarLinha(this)">
+                                <label
+                                    class="form-check-label fw-semibold"
+                                    for="toggle_{{ a['mat_id'] }}"
+                                    id="label_{{ a['mat_id'] }}"
+                                    style="min-width:80px;
+                                           cursor:pointer">
+                                    {% if a.get('presente') %}
+                                        <span class="text-success">
+                                            ✅ Presente
+                                        </span>
+                                    {% else %}
+                                        <span class="text-danger">
+                                            ❌ Ausente
+                                        </span>
+                                    {% endif %}
+                                </label>
+                            </div>
+
                         </td>
                     </tr>
                     {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="2"
-                            class="text-center py-5 text-muted">
-                            Nenhum aluno matriculado.
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between
+                        align-items-center">
+                <span class="text-muted small">
+                    <span id="contPresentes">0</span>
+                    presente(s) de {{ alunos|length }}
+                </span>
+                <button type="submit"
+                        class="btn btn-success px-5">
+                    💾 Salvar Chamada
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <div class="fs-1">😔</div>
+        <p class="mt-2">
+            Nenhum aluno matriculado nesta disciplina.
+        </p>
+        <a href="/matriculas/nova" class="btn btn-primary">
+            ➕ Matricular Alunos
+        </a>
     </div>
 </div>
+{% endif %}
+
+<script>
+// Atualiza cor da linha e texto ao mudar o toggle
+function atualizarLinha(toggle) {
+    const linhaId = toggle.dataset.linha;
+    const linha   = document.getElementById(linhaId);
+    const labelEl = document.getElementById(
+        toggle.id.replace("toggle_", "label_")
+    );
+
+    if (toggle.checked) {
+        linha.classList.add("table-success");
+        linha.classList.remove("table-danger");
+        labelEl.innerHTML =
+            '<span class="text-success">✅ Presente</span>';
+    } else {
+        linha.classList.add("table-danger");
+        linha.classList.remove("table-success");
+        labelEl.innerHTML =
+            '<span class="text-danger">❌ Ausente</span>';
+    }
+    contarPresentes();
+}
+
+// Marca todos presentes ou ausentes
+function marcarTodos(presente) {
+    document.querySelectorAll(".presenca-toggle")
+        .forEach(toggle => {
+            toggle.checked = presente;
+            atualizarLinha(toggle);
+        });
+}
+
+// Conta e exibe quantos estão presentes
+function contarPresentes() {
+    const total = document.querySelectorAll(
+        ".presenca-toggle:checked"
+    ).length;
+    document.getElementById("contPresentes").textContent = total;
+}
+
+// Roda ao carregar a página
+document.addEventListener("DOMContentLoaded", contarPresentes);
+</script>
 
 {% endblock %}
