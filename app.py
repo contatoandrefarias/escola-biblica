@@ -721,20 +721,27 @@ def minha_conta():
 
     return render_template("minha_conta.html")
 
+# ══════════════════════════════════════════
+# INICIALIZAÇÃO DO BANCO E CONFIGURAÇÃO
+# ══════════════════════════════════════════
+import os
 
-# ╔══════════════════════════════════════════════╗
-# ║                  INÍCIO                      ║
-# ╚══════════════════════════════════════════════╝
+# Inicializa o banco ao carregar o arquivo
+inicializar_banco()
+
 if __name__ == "__main__":
-    inicializar_banco()
+    port = int(os.environ.get("PORT", 5000))
     print("\n" + "="*50)
     print("  ✝️  ESCOLA BÍBLICA - NOVA ALIANÇA")
-    print("  🌐 Acesse: http://localhost:5000")
+    print(f"  🌐 Acesse: http://localhost:{port}")
     print("  📧 Login : admin@escola.com")
     print("  🔑 Senha : admin123")
     print("="*50 + "\n")
-    app.run(debug=True, host="0.0.0.0", port=5000)
-
+    app.run(
+        host  = "0.0.0.0",
+        port  = port,
+        debug = False
+    )
 
 
     
