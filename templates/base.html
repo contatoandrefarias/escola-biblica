@@ -74,26 +74,7 @@
         }
         .nav-link-side.active {
             font-weight: 600;
-        }
-        .nav-link-side .arrow {
-            margin-left: auto;
-            transition: transform 0.2s;
-        }
-        .nav-link-side.open .arrow {
-            transform: rotate(90deg);
-        }
-        .submenu {
-            padding-left: 20px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        .submenu.open {
-            max-height: 200px; /* Ajuste conforme necessário para o número de itens */
-        }
-        .submenu .nav-link-side {
-            padding-left: 35px;
-            font-size: 0.95rem;
+            background-color: #e0e7ed; /* Um pouco mais escuro para o ativo */
         }
         .menu-section {
             font-size: 0.85rem;
@@ -222,78 +203,24 @@
 
     <div class="menu-section">Gestão</div>
 
-    <button class="nav-link-side {% if '/turmas' in request.path %}open{% endif %}"
-            onclick="toggleMenu('mTurmas',this)">
+    <a href="/turmas" class="nav-link-side {% if '/turmas' in request.path %}active{% endif %}">
         <i class="bi bi-collection-fill"></i> Turmas
-        <i class="bi bi-chevron-right arrow"></i>
-    </button>
-    <div class="submenu {% if '/turmas' in request.path %}open{% endif %}" id="mTurmas">
-        <a href="/turmas" class="nav-link-side {% if request.path == '/turmas' and not request.path.endswith('/nova') %}active{% endif %}">
-            <i class="bi bi-list-ul"></i> Ver Turmas
-        </a>
-        <a href="/turmas/nova" class="nav-link-side {% if request.path == '/turmas/nova' %}active{% endif %}">
-            <i class="bi bi-plus-circle"></i> Nova Turma
-        </a>
-    </div>
-
-    <button class="nav-link-side {% if '/alunos' in request.path %}open{% endif %}"
-            onclick="toggleMenu('mAlunos',this)">
+    </a>
+    <a href="/alunos" class="nav-link-side {% if '/alunos' in request.path %}active{% endif %}">
         <i class="bi bi-people-fill"></i> Alunos
-        <i class="bi bi-chevron-right arrow"></i>
-    </button>
-    <div class="submenu {% if '/alunos' in request.path %}open{% endif %}" id="mAlunos">
-        <a href="/alunos" class="nav-link-side {% if request.path == '/alunos' and not request.path.endswith('/novo') %}active{% endif %}">
-            <i class="bi bi-list-ul"></i> Ver Alunos
-        </a>
-        <a href="/alunos/novo" class="nav-link-side {% if request.path == '/alunos/novo' %}active{% endif %}">
-            <i class="bi bi-plus-circle"></i> Novo Aluno
-        </a>
-    </div>
-
-    <button class="nav-link-side {% if '/professores' in request.path %}open{% endif %}"
-            onclick="toggleMenu('mProfs',this)">
+    </a>
+    <a href="/professores" class="nav-link-side {% if '/professores' in request.path %}active{% endif %}">
         <i class="bi bi-person-workspace"></i> Professores
-        <i class="bi bi-chevron-right arrow"></i>
-    </button>
-    <div class="submenu {% if '/professores' in request.path %}open{% endif %}" id="mProfs">
-        <a href="/professores" class="nav-link-side {% if request.path == '/professores' and not request.path.endswith('/novo') %}active{% endif %}">
-            <i class="bi bi-list-ul"></i> Ver Professores
-        </a>
-        <a href="/professores/novo" class="nav-link-side {% if request.path == '/professores/novo' %}active{% endif %}">
-            <i class="bi bi-plus-circle"></i> Novo Professor
-        </a>
-    </div>
-
-    <button class="nav-link-side {% if '/disciplinas' in request.path %}open{% endif %}"
-            onclick="toggleMenu('mDisc',this)">
+    </a>
+    <a href="/disciplinas" class="nav-link-side {% if '/disciplinas' in request.path %}active{% endif %}">
         <i class="bi bi-book-fill"></i> Disciplinas
-        <i class="bi bi-chevron-right arrow"></i>
-    </button>
-    <div class="submenu {% if '/disciplinas' in request.path %}open{% endif %}" id="mDisc">
-        <a href="/disciplinas" class="nav-link-side {% if request.path == '/disciplinas' and not request.path.endswith('/nova') %}active{% endif %}">
-            <i class="bi bi-list-ul"></i> Ver Disciplinas
-        </a>
-        <a href="/disciplinas/nova" class="nav-link-side {% if request.path == '/disciplinas/nova' %}active{% endif %}">
-            <i class="bi bi-plus-circle"></i> Nova Disciplina
-        </a>
-    </div>
+    </a>
 
     <div class="menu-section">Acadêmico</div>
 
-    <button class="nav-link-side {% if '/matriculas' in request.path %}open{% endif %}"
-            onclick="toggleMenu('mMat',this)">
+    <a href="/matriculas" class="nav-link-side {% if '/matriculas' in request.path %}active{% endif %}">
         <i class="bi bi-journal-check"></i> Notas e Matrículas
-        <i class="bi bi-chevron-right arrow"></i>
-    </button>
-    <div class="submenu {% if '/matriculas' in request.path %}open{% endif %}" id="mMat">
-        <a href="/matriculas" class="nav-link-side {% if request.path == '/matriculas' and not request.path.endswith('/nova') %}active{% endif %}">
-            <i class="bi bi-list-ul"></i> Ver Notas
-        </a>
-        <a href="/matriculas/nova" class="nav-link-side {% if request.path == '/matriculas/nova' %}active{% endif %}">
-            <i class="bi bi-plus-circle"></i> Nova Matrícula
-        </a>
-    </div>
-
+    </a>
     <a href="/presenca" class="nav-link-side {% if '/presenca' in request.path %}active{% endif %}">
         <i class="bi bi-calendar-check-fill"></i> Chamada / Presença
     </a>
@@ -305,23 +232,13 @@
 
     {% if current_user.is_admin %}
     <div class="menu-section">Administração</div>
-    <button class="nav-link-side {% if '/usuarios' in request.path or '/minha-conta' in request.path %}open{% endif %}"
-            onclick="toggleMenu('mUsers',this)">
-        <i class="bi bi-shield-lock-fill"></i> Usuários
+    <a href="/usuarios" class="nav-link-side {% if '/usuarios' in request.path %}active{% endif %}">
+        <i class="bi bi-shield-lock-fill"></i> Gerenciar Usuários
         <span class="badge-adm">ADMIN</span>
-        <i class="bi bi-chevron-right arrow"></i>
-    </button>
-    <div class="submenu {% if '/usuarios' in request.path or '/minha-conta' in request.path %}open{% endif %}" id="mUsers">
-        <a href="/usuarios" class="nav-link-side {% if request.path == '/usuarios' %}active{% endif %}">
-            <i class="bi bi-list-ul"></i> Gerenciar Usuários
-        </a>
-        <a href="/usuarios/novo" class="nav-link-side {% if request.path == '/usuarios/novo' %}active{% endif %}">
-            <i class="bi bi-person-plus-fill"></i> Novo Usuário
-        </a>
-        <a href="/minha-conta" class="nav-link-side {% if request.path == '/minha-conta' %}active{% endif %}">
-            <i class="bi bi-gear-fill"></i> Minha Conta
-        </a>
-    </div>
+    </a>
+    <a href="/minha-conta" class="nav-link-side {% if '/minha-conta' in request.path %}active{% endif %}">
+        <i class="bi bi-gear-fill"></i> Minha Conta
+    </a>
     {% endif %}
 
 </div>
@@ -344,25 +261,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function toggleMenu(id, btn) {
-    var sub = document.getElementById(id);
-    var aberto = sub.classList.contains("open");
-    // Fecha todos os submenus e remove a classe 'open' dos botões
-    document.querySelectorAll(".submenu").forEach(function(s){ s.classList.remove("open"); });
-    document.querySelectorAll(".nav-link-side").forEach(function(b){
-        // Verifica se o botão tem um submenu associado antes de remover 'open'
-        if (b.nextElementSibling && b.nextElementSibling.classList.contains('submenu')) {
-            b.classList.remove("open");
-        }
-    });
-
-    // Se o submenu clicado não estava aberto, abre-o
-    if (!aberto) {
-        sub.classList.add("open");
-        btn.classList.add("open"); // Adiciona 'open' ao botão clicado
-    }
-}
-
+// Função para alternar a sidebar em dispositivos móveis
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("show");
     document.querySelector(".main-content").classList.toggle("sidebar-hidden");
@@ -378,21 +277,8 @@ window.addEventListener('resize', function() {
     }
 });
 
-// Inicializa o estado do menu ao carregar a página
-document.addEventListener('DOMContentLoaded', function() {
-    // Abre o submenu se a rota atual estiver dentro dele
-    document.querySelectorAll('.nav-link-side').forEach(function(btn) {
-        var submenu = btn.nextElementSibling;
-        if (submenu && submenu.classList.contains('submenu')) {
-            var links = submenu.querySelectorAll('.nav-link-side');
-            var isActiveSubmenu = Array.from(links).some(link => link.classList.contains('active'));
-            if (isActiveSubmenu) {
-                submenu.classList.add('open');
-                btn.classList.add('open');
-            }
-        }
-    });
-});
+// Remove a função toggleMenu e o código de inicialização de submenus,
+// pois agora usamos links diretos.
 </script>
 </body>
 </html>
