@@ -6,28 +6,26 @@
     <a href="/alunos" class="btn btn-outline-secondary">← Voltar</a>
 </div>
 
-<div class="card" style="max-width:500px">
-    <div class="card-header">Dados do Aluno</div>
+<div class="card shadow-sm" style="max-width:500px">
+    <div class="card-header fw-semibold">Dados do Aluno</div>
     <div class="card-body">
         <form method="POST">
             <div class="mb-3">
                 <label class="form-label fw-semibold">
                     Nome Completo <span class="text-danger">*</span>
                 </label>
-                <input type="text" name="nome"
-                       class="form-control" required autofocus
+                <input type="text" name="nome" class="form-control"
+                       required autofocus
                        placeholder="Nome do aluno">
             </div>
             <div class="mb-3">
                 <label class="form-label fw-semibold">Telefone</label>
-                <input type="text" name="telefone"
-                       class="form-control"
-                       placeholder="(00) 00000-0000">
+                <input type="text" name="telefone" class="form-control"
+                       placeholder="Ex: (99) 99999-9999">
             </div>
             <div class="mb-3">
                 <label class="form-label fw-semibold">E-mail</label>
-                <input type="email" name="email"
-                       class="form-control"
+                <input type="email" name="email" class="form-control"
                        placeholder="email@exemplo.com">
             </div>
             <div class="mb-3">
@@ -37,21 +35,39 @@
                 <input type="date" name="data_nascimento"
                        class="form-control">
             </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">
+                    🏫 Turma
+                </label>
+                <select name="turma_id" class="form-select">
+                    <option value="">— Nenhuma turma —</option>
+                    {% for t in turmas %}
+                    <option value="{{ t['id'] }}">{{ t['nome'] }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">
+                    Selecione a turma que o aluno pertence.
+                </div>
+            </div>
+
             <div class="mb-4">
-                <div class="form-check">
+                <div class="form-check form-switch">
                     <input type="checkbox" name="membro_igreja"
-                           class="form-check-input" id="membro">
-                    <label class="form-check-label" for="membro">
+                           class="form-check-input" id="membro_igreja"
+                           style="width:2.5rem;height:1.3rem">
+                    <label class="form-check-label ms-2"
+                           for="membro_igreja">
                         ✝️ Membro da Igreja
                     </label>
                 </div>
             </div>
+
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary px-4">
-                    💾 Salvar Aluno
+                    💾 Cadastrar Aluno
                 </button>
-                <a href="/alunos"
-                   class="btn btn-outline-secondary">
+                <a href="/alunos" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
             </div>

@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from flask import (Flask, render_template, request,
                    redirect, url_for, flash)
 from flask_login import (LoginManager, login_user, logout_user,
@@ -483,7 +484,7 @@ def nova_matricula():
     conn   = conectar()
     cursor = conn.cursor()
     if request.method == "POST":
-        aluno_id  = request.form.get("aluno_id")
+        aluno_id = request.form.get("aluno_id")
         disc_id   = request.form.get("disciplina_id")
         data_ini  = request.form.get("data_inicio", "").strip()
         nota1     = request.form.get("nota1") or None
