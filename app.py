@@ -335,5 +335,40 @@ def nova_disciplina():
     conn   = conectar()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM professores ORDER BY nome")
-    pr
+    @app.route("/disciplinas/nova", methods=["GET", "POST"])
+@login_required
+def nova_disciplina():
+    if request.method == "POST":
+        nome      = request.form.get("nome", "").strip()
+        descricao = request.form.get("descricao", "").strip()
+        carga     = request.form.get("carga_horaria", "0")
+        nota_min  = request.form.get("nota_minima", "6.0")
+        freq_min  = request.form.get("frequencia_minima", "75")
+        prof_id   = request.form.get("professor_id") or None
+
+        if not nome:
+            flash("Nome é obrigatório!", "erro")
+            return redirect(url_for("nova_disciplina"))
+
+        conn   = conectar()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO disciplinas
+                (nome, descricao, carga_horaria,
+                 nota_minima, frequencia_minima, professor_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (nome, descricao, int(carga),
+              float(nota_min), float(freq_min), prof_id))
+        conn.commit()
+        conn.close()
+        flash(f"Disciplina '{nome}' cadastrada!", "sucesso")
+        return redirect(url_for("disciplinas"))
+
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM professores ORDER BY nome")
+    profs  = cursor.fetchall()
+    conn.close()
+    return render_template("nova_disciplina.html",
+                           professores=profs)
 
