@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<h4 class="fw-bold mb-4">🏠 Painel Principal</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center h-100"
+             style="background:linear-gradient(135deg,#1a237e,#3949ab)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ total_alunos }}</div>
+                <div class="small opacity-75">👤 Alunos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center h-100"
+             style="background:linear-gradient(135deg,#1b5e20,#388e3c)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ total_professores }}</div>
+                <div class="small opacity-75">👨‍🏫 Professores</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center h-100"
+             style="background:linear-gradient(135deg,#e65100,#ef6c00)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ total_disciplinas }}</div>
+                <div class="small opacity-75">📚 Disciplinas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center h-100"
+             style="background:linear-gradient(135deg,#880e4f,#c2185b)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ aprovados }}</div>
+                <div class="small opacity-75">✅ Aprovados</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">📊 Situação Geral</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>✅ Aprovados</span>
+                        <strong class="text-success">{{ aprovados }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>❌ Reprovados</span>
+                        <strong class="text-danger">{{ reprovados }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>📘 Cursando</span>
+                        <strong class="text-primary">{{ cursando }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">⚡ Acesso Rápido</div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="/alunos/novo"
+                           class="btn btn-outline-primary w-100">
+                            ➕ Novo Aluno
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/professores/novo"
+                           class="btn btn-outline-success w-100">
+                            ➕ Novo Professor
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/disciplinas/nova"
+                           class="btn btn-outline-warning w-100">
+                            ➕ Nova Disciplina
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/matriculas/nova"
+                           class="btn btn-outline-danger w-100">
+                            ➕ Nova Matrícula
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/presenca"
+                           class="btn btn-outline-info w-100">
+                            📋 Registrar Presença
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/relatorios"
+                           class="btn btn-outline-secondary w-100">
+                            📊 Ver Relatórios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

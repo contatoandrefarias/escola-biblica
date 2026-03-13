@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">📅 Registrar Presença</h4>
+</div>
+
+<div class="card" style="max-width:500px">
+    <div class="card-header">Selecionar Disciplina e Data</div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">
+                    Disciplina <span class="text-danger">*</span>
+                </label>
+                <select name="disciplina_id"
+                        class="form-select" required>
+                    <option value="">
+                        — Selecione a disciplina —
+                    </option>
+                    {% for d in disciplinas %}
+                    <option value="{{ d['id'] }}">
+                        {{ d['nome'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold">
+                    Data da Aula <span class="text-danger">*</span>
+                </label>
+                <input type="date" name="data_aula"
+                       class="form-control" required
+                       value="{{ hoje }}">
+            </div>
+            <button type="submit" class="btn btn-info w-100">
+                📋 Registrar Chamada
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

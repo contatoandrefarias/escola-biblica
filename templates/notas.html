@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">📝 Lançar Notas</h4>
+    <a href="/matriculas" class="btn btn-outline-secondary">
+        ← Voltar
+    </a>
+</div>
+
+<div class="card" style="max-width:500px">
+    <div class="card-header">
+        {{ matricula['aluno'] }} —
+        {{ matricula['disciplina'] }}
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Nota 1</label>
+                <input type="number" name="nota1"
+                       class="form-control"
+                       value="{{ matricula['nota1'] or '' }}"
+                       step="0.1" min="0" max="10"
+                       placeholder="0.0 a 10.0">
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Nota 2</label>
+                <input type="number" name="nota2"
+                       class="form-control"
+                       value="{{ matricula['nota2'] or '' }}"
+                       step="0.1" min="0" max="10"
+                       placeholder="0.0 a 10.0">
+            </div>
+
+            {% if matricula['nota_final'] is not none %}
+            <div class="alert alert-info">
+                <strong>Média atual:</strong>
+                {{ matricula['nota_final'] | round(1) }}
+                —
+                {% if matricula['status'] == 'aprovado' %}
+                    <span class="text-success fw-bold">
+                        ✅ Aprovado
+                    </span>
+                {% else %}
+                    <span class="text-danger fw-bold">
+                        ❌ Reprovado
+                    </span>
+                {% endif %}
+                <br>
+                <small>
+                    Nota mínima: {{ matricula['nota_minima'] }}
+                </small>
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-info px-4">
+                    💾 Salvar Notas
+                </button>
+                <a href="/matriculas"
+                   class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

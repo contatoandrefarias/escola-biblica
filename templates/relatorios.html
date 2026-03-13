@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<h4 class="fw-bold mb-4">📊 Relatórios</h4>
+
+<div class="card mb-4">
+    <div class="card-header">🏆 Ranking de Alunos</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Aluno</th>
+                    <th>Total</th>
+                    <th>Aprovadas</th>
+                    <th>Média Geral</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if ranking %}
+                    {% for r in ranking %}
+                    <tr>
+                        <td class="fw-bold text-muted">
+                            {{ loop.index }}º
+                        </td>
+                        <td class="fw-semibold">{{ r['nome'] }}</td>
+                        <td>{{ r['total'] }}</td>
+                        <td>
+                            <span class="badge bg-success">
+                                {{ r['aprovadas'] }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">
+                            {% if r['media'] %}
+                                {{ r['media'] | round(1) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5"
+                            class="text-center py-4 text-muted">
+                            Nenhum dado disponível ainda.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">📋 Todas as Matrículas</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Aluno</th>
+                    <th>Disciplina</th>
+                    <th>Média</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if matriculas %}
+                    {% for m in matriculas %}
+                    <tr>
+                        <td class="fw-semibold">{{ m['aluno'] }}</td>
+                        <td>{{ m['disciplina'] }}</td>
+                        <td>
+                            {% if m['nota_final'] is not none %}
+                                {{ m['nota_final'] | round(1) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if m['status'] == 'aprovado' %}
+                                <span class="badge bg-success">
+                                    ✅ Aprovado
+                                </span>
+                            {% elif m['status'] == 'reprovado' %}
+                                <span class="badge bg-danger">
+                                    ❌ Reprovado
+                                </span>
+                            {% else %}
+                                <span class="badge bg-primary">
+                                    📘 Cursando
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4"
+                            class="text-center py-4 text-muted">
+                            Nenhuma matrícula encontrada.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

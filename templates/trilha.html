@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📋 Trilha de Formação</h4>
+        <span class="text-muted">
+            {{ aluno['nome'] }}
+            {% if aluno['membro_igreja'] %}
+                <span class="badge bg-primary ms-2">✝️ Membro</span>
+            {% else %}
+                <span class="badge bg-secondary ms-2">
+                    👤 Visitante
+                </span>
+            {% endif %}
+        </span>
+    </div>
+    <a href="/alunos" class="btn btn-outline-secondary">← Voltar</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center"
+             style="background:linear-gradient(135deg,#1b5e20,#388e3c)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ aprovadas }}</div>
+                <div class="small">✅ Aprovadas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center"
+             style="background:linear-gradient(135deg,#b71c1c,#e53935)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ reprovadas }}</div>
+                <div class="small">❌ Reprovadas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center"
+             style="background:linear-gradient(135deg,#1a237e,#3949ab)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ cursando }}</div>
+                <div class="small">📘 Cursando</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white text-center"
+             style="background:linear-gradient(135deg,#212121,#424242)">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold">{{ trilha|length }}</div>
+                <div class="small">📋 Total</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header fw-semibold">Disciplinas</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Disciplina</th>
+                    <th>Carga</th>
+                    <th>Nota 1</th>
+                    <th>Nota 2</th>
+                    <th>Média</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if trilha %}
+                    {% for t in trilha %}
+                    <tr>
+                        <td class="fw-semibold">{{ t['nome'] }}</td>
+                        <td>{{ t['carga_horaria'] }}h</td>
+                        <td>
+                            {% if t['nota1'] is not none %}
+                                {{ t['nota1'] }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if t['nota2'] is not none %}
+                                {{ t['nota2'] }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="fw-bold">
+                            {% if t['nota_final'] is not none %}
+                                {{ t['nota_final'] | round(1) }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if t['status'] == 'aprovado' %}
+                                <span class="badge bg-success">
+                                    ✅ Aprovado
+                                </span>
+                            {% elif t['status'] == 'reprovado' %}
+                                <span class="badge bg-danger">
+                                    ❌ Reprovado
+                                </span>
+                            {% else %}
+                                <span class="badge bg-primary">
+                                    📘 Cursando
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6"
+                            class="text-center py-5 text-muted">
+                            Nenhuma disciplina matriculada.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-muted small">
+        Cadastro: {{ aluno['data_cadastro'] }}
+    </div>
+</div>
+
+{% endblock %}

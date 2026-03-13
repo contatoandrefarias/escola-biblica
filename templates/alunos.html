@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">👤 Alunos</h4>
+    <a href="/alunos/novo" class="btn btn-primary">
+        ➕ Novo Aluno
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Situação</th>
+                    <th>Cadastro</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if alunos %}
+                    {% for a in alunos %}
+                    <tr>
+                        <td class="text-muted">{{ a['id'] }}</td>
+                        <td class="fw-semibold">{{ a['nome'] }}</td>
+                        <td>{{ a['telefone'] or '—' }}</td>
+                        <td>
+                            {% if a['membro_igreja'] %}
+                                <span class="badge bg-primary">
+                                    ✝️ Membro
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    👤 Visitante
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">
+                            {{ a['data_cadastro'] }}
+                        </td>
+                        <td>
+                            <a href="/alunos/{{ a['id'] }}/trilha"
+                               class="btn btn-sm btn-success">
+                                📋 Trilha
+                            </a>
+                            <a href="/alunos/{{ a['id'] }}/editar"
+                               class="btn btn-sm btn-warning">
+                                ✏️ Editar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6"
+                            class="text-center py-5 text-muted">
+                            Nenhum aluno cadastrado ainda.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-muted small">
+        Total: {{ alunos|length }} aluno(s)
+    </div>
+</div>
+
+{% endblock %}
