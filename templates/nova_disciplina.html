@@ -3,12 +3,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0">➕ Nova Disciplina</h4>
-    <a href="/disciplinas" class="btn btn-outline-secondary">
-        ← Voltar
-    </a>
+    <a href="/disciplinas" class="btn btn-outline-secondary">← Voltar</a>
 </div>
 
-<div class="card" style="max-width:500px">
+<div class="card" style="max-width:540px">
     <div class="card-header">Dados da Disciplina</div>
     <div class="card-body">
         <form method="POST">
@@ -20,58 +18,58 @@
                        class="form-control" required autofocus
                        placeholder="Ex: Antigo Testamento">
             </div>
+
             <div class="mb-3">
                 <label class="form-label fw-semibold">Descrição</label>
-                <textarea name="descricao" class="form-control"
-                          rows="2"
-                          placeholder="Descrição da disciplina">
+                <textarea name="descricao" class="form-control" rows="2"
+                    placeholder="Breve descricao da disciplina">
                 </textarea>
             </div>
+
             <div class="mb-3">
                 <label class="form-label fw-semibold">
-                    Carga Horária (horas)
+                    📅 Duração da Disciplina
                 </label>
-                <input type="number" name="carga_horaria"
-                       class="form-control" value="40" min="1">
+                <div class="input-group">
+                    <input type="number" name="duracao_semanas"
+                           class="form-control" value="4"
+                           min="1" max="52" required>
+                    <span class="input-group-text fw-semibold">
+                        semanas
+                    </span>
+                </div>
+                <div class="form-text">
+                    💡 Exemplo: 4 semanas, 8 semanas, 12 semanas...
+                </div>
             </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <label class="form-label fw-semibold">
+                        Nota Mínima
+                    </label>
+                    <div class="input-group">
+                        <input type="number" name="nota_minima"
+                               class="form-control" value="6.0"
+                               step="0.5" min="0" max="10">
+                        <span class="input-group-text">pts</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold">
+                        Freq. Mínima
+                    </label>
+                    <div class="input-group">
+                        <input type="number" name="frequencia_minima"
+                               class="form-control" value="75"
+                               min="0" max="100">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    Nota Mínima para Aprovação
-                </label>
-                <input type="number" name="nota_minima"
-                       class="form-control" value="6.0"
-                       step="0.1" min="0" max="10">
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    Frequência Mínima (%)
-                </label>
-                <input type="number" name="frequencia_minima"
-                       class="form-control" value="75"
-                       min="0" max="100">
-            </div>
-            <div class="mb-4">
                 <label class="form-label fw-semibold">Professor</label>
                 <select name="professor_id" class="form-select">
-                    <option value="">— Sem professor —</option>
-                    {% for p in professores %}
-                    <option value="{{ p['id'] }}">
-                        {{ p['nome'] }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-warning px-4">
-                    💾 Salvar Disciplina
-                </button>
-                <a href="/disciplinas"
-                   class="btn btn-outline-secondary">
-                    Cancelar
-                </a>
-            </div>
-        </form>
-    </div>
-</div>
+                    <option value="">
 
-{% endblock %}

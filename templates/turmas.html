@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">🏫 Turmas</h4>
+    <a href="/turmas/nova" class="btn btn-primary">➕ Nova Turma</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nome da Turma</th>
+                    <th>Faixa Etária</th>
+                    <th>Descrição</th>
+                    <th class="text-center">Alunos</th>
+                    <th class="text-center">Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if turmas %}
+                {% for t in turmas %}
+                <tr>
+                    <td class="fw-semibold align-middle">
+                        {{ t['nome'] }}
+                    </td>
+                    <td class="align-middle">
+                        {{ t['faixa_etaria'] or '—' }}
+                    </td>
+                    <td class="align-middle text-muted small">
+                        {{ t['descricao'] or '—' }}
+                    </td>
+                    <td class="text-center align-middle">
+                        <span class="badge bg-primary fs-6">
+                            {{ t['total_alunos'] }}
+                        </span>
+                    </td>
+                    <td class="text-center align-middle">
+                        {% if t['ativa'] %}
+                        <span class="badge bg-success">✅ Ativa</span>
+                        {% else %}
+                        <span class="badge bg-secondary">⏸ Inativa</span>
+                        {% endif %}
+                    </td>
+                    <td class="align-middle">
+                        <a href="/turmas/{{ t['id'] }}/editar"
+                           class="btn btn-sm btn-warning">
+                            ✏️ Editar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <div class="fs-1">🏫</div>
+                        Nenhuma turma cadastrada ainda.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-muted small">
+        Total: {{ turmas|length }} turma(s)
+    </div>
+</div>
+
+{% endblock %}

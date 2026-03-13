@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>✝️ Escola Bíblica - Nova Aliança</title>
+    <title>✝️ Escola Biblica</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -11,202 +11,261 @@
 
         .topbar {
             background: linear-gradient(135deg,#1a237e,#283593);
-            color: white;
-            padding: 0 24px;
-            height: 56px;
-            display: flex;
-            align-items: center;
+            color: white; padding: 0 20px; height: 56px;
+            display: flex; align-items: center;
             justify-content: space-between;
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: fixed; top:0; left:0; right:0;
+            z-index: 1100; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-        .topbar .brand { font-size:1.05rem; font-weight:700; }
-        .topbar .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.88rem;
-        }
-        .topbar .user-badge {
-            background: rgba(255,255,255,0.15);
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-        .topbar .btn-logout {
+        .topbar .brand { font-size:1rem; font-weight:700; }
+        .topbar .btn-topo {
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.82rem;
-            text-decoration: none;
-            transition: background 0.2s;
+            color: white; padding: 4px 12px;
+            border-radius: 6px; font-size:0.82rem;
+            text-decoration: none; transition: background 0.2s;
         }
-        .topbar .btn-logout:hover {
-            background: rgba(255,255,255,0.25);
-            color: white;
+        .topbar .btn-topo:hover {
+            background: rgba(255,255,255,0.28); color:white;
         }
 
+        /* SIDEBAR */
         .sidebar {
-            width: 230px;
+            width: 240px;
             min-height: calc(100vh - 56px);
             background: #fff;
-            border-right: 1px solid #dee2e6;
-            padding: 16px 10px;
-            position: fixed;
-            top: 56px; left: 0;
-            overflow-y: auto;
+            border-right: 1px solid #e0e0e0;
+            position: fixed; top:56px; left:0;
+            overflow-y: auto; padding-bottom: 20px;
         }
-        .sidebar .nav-link {
-            color: #444;
-            border-radius: 8px;
-            padding: 9px 12px;
-            margin-bottom: 2px;
-            font-size: 0.92rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-        .sidebar .nav-link:hover  { background:#e8eaf6; color:#1a237e; }
-        .sidebar .nav-link.active { background:#1a237e; color:#fff; }
-        .sidebar .section-label {
-            font-size: 0.7rem;
+        .sidebar .menu-section {
+            padding: 12px 16px 4px;
+            font-size: 0.68rem;
             font-weight: 700;
-            color: #bbb;
+            color: #9e9e9e;
             text-transform: uppercase;
             letter-spacing: 1px;
-            padding: 14px 12px 4px;
         }
-        .sidebar .admin-badge {
-            background: #fff3cd;
-            color: #856404;
-            font-size: 0.68rem;
+        .sidebar .nav-link {
+            color: #37474f;
+            border-radius: 8px;
+            padding: 9px 14px;
+            margin: 1px 8px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .sidebar .nav-link:hover {
+            background: #e8eaf6; color: #1a237e;
+        }
+        .sidebar .nav-link.active {
+            background: #1a237e; color: #fff;
+        }
+        .sidebar .nav-link .badge-menu {
+            margin-left: auto;
+            font-size: 0.65rem;
+            background: #ffb300;
+            color: #000;
             padding: 2px 6px;
             border-radius: 4px;
+        }
+
+        /* SUB-MENU */
+        .sidebar .submenu {
+            display: none;
+            padding-left: 8px;
+        }
+        .sidebar .submenu.show { display: block; }
+        .sidebar .submenu .nav-link {
+            font-size: 0.84rem;
+            padding: 7px 14px;
+            color: #546e7a;
+        }
+        .sidebar .submenu .nav-link:hover {
+            background: #f5f5f5; color: #1a237e;
+        }
+        .sidebar .nav-link .arrow {
             margin-left: auto;
+            transition: transform 0.2s;
+            font-size: 0.75rem;
+        }
+        .sidebar .nav-link.open .arrow {
+            transform: rotate(90deg);
         }
 
         .main-content {
-            margin-left: 230px;
+            margin-left: 240px;
             margin-top: 56px;
-            padding: 28px;
+            padding: 24px;
+            min-height: calc(100vh - 56px);
         }
 
         .card {
             border: none;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-            margin-bottom: 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
         .card-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
             border-radius: 12px 12px 0 0 !important;
             font-weight: 600;
-            background: #fff;
-            border-bottom: 1px solid #eee;
-            padding: 14px 20px;
         }
-        .table th { font-weight:600; font-size:0.87rem; }
-        .table td { vertical-align:middle; font-size:0.92rem; }
-        .alert { border-radius:10px; border:none; }
+        .btn { border-radius: 8px; }
+        .table th { font-size: 0.82rem; font-weight: 700; }
 
-        @media (max-width:768px) {
-            .sidebar { display:none; }
-            .main-content { margin-left:0; padding:16px; }
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 16px; }
         }
     </style>
 </head>
 <body>
 
-<!-- Barra do topo -->
+<!-- TOPBAR -->
 <div class="topbar">
     <div class="brand">✝️ Escola Bíblica — Nova Aliança</div>
-    <div class="user-info">
-        <span class="user-badge">
-            <i class="bi bi-person-fill me-1"></i>
-            {{ current_user.nome }}
-            {% if current_user.is_admin %}
-                <span class="badge bg-warning text-dark ms-1"
-                      style="font-size:0.65rem">ADMIN</span>
-            {% endif %}
+    <div class="d-flex align-items-center gap-2">
+        <span style="font-size:0.82rem;opacity:0.8">
+            👤 {{ current_user.nome }}
         </span>
-        <a href="/minha-conta" class="btn-logout">
-            <i class="bi bi-gear me-1"></i>Minha Conta
-        </a>
-        <a href="/logout" class="btn-logout">
-            <i class="bi bi-box-arrow-right me-1"></i>Sair
-        </a>
+        <a href="/minha-conta" class="btn-topo">⚙️ Conta</a>
+        <a href="/logout"      class="btn-topo">🚪 Sair</a>
     </div>
 </div>
 
-<!-- Menu lateral -->
+<!-- SIDEBAR -->
 <div class="sidebar">
-    <nav class="nav flex-column">
 
-        <a class="nav-link {% if request.path=='/' %}active{% endif %}"
-           href="/">
-            <i class="bi bi-house-fill"></i>Painel
-        </a>
+    <!-- PAINEL -->
+    <div class="menu-section">Início</div>
+    <a href="/"
+       class="nav-link {% if request.path == '/' %}active{% endif %}">
+        <i class="bi bi-house-fill"></i> Painel
+    </a>
 
-        <div class="section-label">Cadastros</div>
+    <!-- CADASTROS -->
+    <div class="menu-section">Cadastros</div>
 
-        <a class="nav-link {% if '/alunos' in request.path %}active{% endif %}"
-           href="/alunos">
-            <i class="bi bi-people-fill"></i>Alunos
-        </a>
+    <!-- Turmas -->
+    <a href="#" class="nav-link
+       {% if '/turmas' in request.path %}open{% endif %}"
+       onclick="toggleMenu('menuTurmas', this); return false;">
+        <i class="bi bi-collection-fill"></i>
+        Turmas
+        <i class="bi bi-chevron-right arrow"></i>
+    </a>
+    <div class="submenu {% if '/turmas' in request.path %}show{% endif %}"
+         id="menuTurmas">
+        <a href="/turmas"      class="nav-link">📋 Ver Turmas</a>
+        <a href="/turmas/nova" class="nav-link">➕ Nova Turma</a>
+    </div>
 
-        <a class="nav-link {% if '/professores' in request.path %}active{% endif %}"
-           href="/professores">
-            <i class="bi bi-person-workspace"></i>Professores
-        </a>
+    <!-- Alunos -->
+    <a href="#" class="nav-link
+       {% if '/alunos' in request.path %}open{% endif %}"
+       onclick="toggleMenu('menuAlunos', this); return false;">
+        <i class="bi bi-people-fill"></i>
+        Alunos
+        <i class="bi bi-chevron-right arrow"></i>
+    </a>
+    <div class="submenu {% if '/alunos' in request.path %}show{% endif %}"
+         id="menuAlunos">
+        <a href="/alunos"      class="nav-link">📋 Ver Alunos</a>
+        <a href="/alunos/novo" class="nav-link">➕ Novo Aluno</a>
+    </div>
 
-        <a class="nav-link {% if '/disciplinas' in request.path %}active{% endif %}"
-           href="/disciplinas">
-            <i class="bi bi-book-fill"></i>Disciplinas
-        </a>
+    <!-- Professores -->
+    <a href="#" class="nav-link
+       {% if '/professores' in request.path %}open{% endif %}"
+       onclick="toggleMenu('menuProfs', this); return false;">
+        <i class="bi bi-person-workspace"></i>
+        Professores
+        <i class="bi bi-chevron-right arrow"></i>
+    </a>
+    <div class="submenu {% if '/professores' in request.path %}show{% endif %}"
+         id="menuProfs">
+        <a href="/professores"      class="nav-link">📋 Ver Professores</a>
+        <a href="/professores/novo" class="nav-link">➕ Novo Professor</a>
+    </div>
 
-        <div class="section-label">Acadêmico</div>
+    <!-- Disciplinas -->
+    <a href="#" class="nav-link
+       {% if '/disciplinas' in request.path %}open{% endif %}"
+       onclick="toggleMenu('menuDisc', this); return false;">
+        <i class="bi bi-book-fill"></i>
+        Disciplinas
+        <i class="bi bi-chevron-right arrow"></i>
+    </a>
+    <div class="submenu {% if '/disciplinas' in request.path %}show{% endif %}"
+         id="menuDisc">
+        <a href="/disciplinas"      class="nav-link">📋 Ver Disciplinas</a>
+        <a href="/disciplinas/nova" class="nav-link">➕ Nova Disciplina</a>
+    </div>
 
-        <a class="nav-link {% if '/matriculas' in request.path %}active{% endif %}"
-           href="/matriculas">
-            <i class="bi bi-journal-check"></i>Matrículas
-        </a>
+    <!-- ACADEMICO -->
+    <div class="menu-section">Acadêmico</div>
 
-        <a class="nav-link {% if '/presenca' in request.path %}active{% endif %}"
-           href="/presenca">
-            <i class="bi bi-calendar-check"></i>Presença
-        </a>
+    <!-- Matriculas -->
+    <a href="#" class="nav-link
+       {% if '/matriculas' in request.path %}open{% endif %}"
+       onclick="toggleMenu('menuMat', this); return false;">
+        <i class="bi bi-journal-check"></i>
+        Matrículas
+        <i class="bi bi-chevron-right arrow"></i>
+    </a>
+    <div class="submenu {% if '/matriculas' in request.path %}show{% endif %}"
+         id="menuMat">
+        <a href="/matriculas"      class="nav-link">📋 Ver Matrículas</a>
+        <a href="/matriculas/nova" class="nav-link">➕ Nova Matrícula</a>
+    </div>
 
-        <div class="section-label">Análise</div>
+    <!-- Presenca -->
+    <a href="/presenca" class="nav-link
+       {% if '/presenca' in request.path %}active{% endif %}">
+        <i class="bi bi-calendar-check-fill"></i>
+        Chamada / Presença
+    </a>
 
-        <a class="nav-link {% if '/relatorios' in request.path %}active{% endif %}"
-           href="/relatorios">
-            <i class="bi bi-bar-chart-fill"></i>Relatórios
-        </a>
+    <!-- ANALISE -->
+    <div class="menu-section">Análise</div>
+    <a href="/relatorios" class="nav-link
+       {% if '/relatorios' in request.path %}active{% endif %}">
+        <i class="bi bi-bar-chart-fill"></i> Relatórios
+    </a>
 
-        <!-- Menu de admin (apenas para administradores) -->
-        {% if current_user.is_admin %}
-        <div class="section-label">Administração</div>
-        <a class="nav-link {% if '/usuarios' in request.path %}active{% endif %}"
-           href="/usuarios">
-            <i class="bi bi-shield-lock-fill"></i>
-            Usuários
-            <span class="admin-badge">ADMIN</span>
-        </a>
-        {% endif %}
+    <!-- ADMIN -->
+    {% if current_user.is_admin %}
+    <div class="menu-section">Administração</div>
+    <a href="#" class="nav-link
+       {% if '/usuarios' in request.path %}open{% endif %}"
+       onclick="toggleMenu('menuUsers', this); return false;">
+        <i class="bi bi-shield-lock-fill"></i>
+        Usuários
+        <span class="badge-menu">ADMIN</span>
+        <i class="bi bi-chevron-right arrow"></i>
+    </a>
+    <div class="submenu {% if '/usuarios' in request.path %}show{% endif %}"
+         id="menuUsers">
+        <a href="/usuarios"      class="nav-link">📋 Ver Usuários</a>
+        <a href="/usuarios/novo" class="nav-link">➕ Novo Usuário</a>
+    </div>
+    {% endif %}
 
-    </nav>
 </div>
 
-<!-- Conteúdo principal -->
+<!-- CONTEUDO -->
 <div class="main-content">
-
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for cat, msg in messages %}
-            <div class="alert alert-{{ 'success' if cat=='sucesso' else 'danger' }} alert-dismissible fade show">
+            <div class="alert
+                 alert-{{ 'success' if cat == 'sucesso' else 'danger' }}
+                 alert-dismissible fade show shadow-sm">
                 {{ msg }}
                 <button type="button" class="btn-close"
                         data-bs-dismiss="alert"></button>
@@ -219,5 +278,23 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleMenu(id, el) {
+    var sub = document.getElementById(id);
+    var isOpen = sub.classList.contains("show");
+    // fecha todos
+    document.querySelectorAll(".submenu").forEach(function(s) {
+        s.classList.remove("show");
+    });
+    document.querySelectorAll(".nav-link.open").forEach(function(l) {
+        l.classList.remove("open");
+    });
+    // abre o clicado se estava fechado
+    if (!isOpen) {
+        sub.classList.add("show");
+        el.classList.add("open");
+    }
+}
+</script>
 </body>
 </html>
