@@ -6,7 +6,6 @@ from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
 from werkzeug.security import generate_password_hash
 from database import conectar, inicializar_banco
-# Certifique-se de que 'auth' está no mesmo diretório ou no PYTHONPATH
 from auth import carregar_usuario, verificar_login
 
 app = Flask(__name__)
@@ -582,13 +581,64 @@ def editar_matricula(id):
 def presenca():
     conn   = conectar()
     cursor = conn.cursor()
+
+    # Buscar todas as disciplinas ativas
     cursor.execute(
-        "SELECT id,nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
-    discs = cursor.fetchall()
+        "SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
+    todas_disciplinas = cursor.fetchall()
+
+    disciplinas_cursando = []
+    disciplinas_concluidas = []
+
+    # Para cada disciplina, verificar o status da matrícula do usuário logado
+    # Se o usuário logado for um aluno, verificar suas próprias matrículas
+    # Se for um admin/professor, pode-se considerar todas as matrículas ou focar nas ativas
+    # Por simplicidade, vamos considerar o status da matrícula do current_user (se for aluno)
+    # ou o status geral da disciplina (se não for aluno ou se não houver matrícula específica)
+
+    # Se o current_user for um aluno, filtramos pelas suas matrículas
+    if current_user.is_aluno: # Assumindo que você tem um atributo is_aluno no seu User
+        cursor.execute("""
+            SELECT d.id, d.nome, m.status
+            FROM disciplinas d
+            JOIN matriculas m ON d.id = m.disciplina_id
+            WHERE m.aluno_id = ? AND d.ativa = 1
+            ORDER BY d.nome
+        """, (current_user.id,)) # Assumindo que current_user.id é o ID do aluno
+        disciplinas_do_aluno = cursor.fetchall()
+
+        for disc in todas_disciplinas:
+            # Encontrar a matrícula correspondente para esta disciplina
+            mat_status = None
+            for mat_disc in disciplinas_do_aluno:
+                if mat_disc['id'] == disc['id']:
+                    mat_status = mat_disc['status']
+                    break
+
+            if mat_status == 'cursando':
+                disciplinas_cursando.append(disc)
+            elif mat_status in ['aprovado', 'reprovado']:
+                disciplinas_concluidas.append(disc)
+            # Se não houver matrícula ou status não for 'cursando'/'aprovado'/'reprovado',
+            # não adicionamos para evitar que disciplinas sem matrícula apareçam como "cursando"
+            # ou "concluídas" para o aluno.
+            # Se a disciplina não tem matrícula para o aluno, ela não aparece em nenhuma lista.
+    else: # Para administradores ou professores, listamos todas as disciplinas ativas
+          # e consideramos que elas estão "cursando" para fins de chamada,
+          # a menos que haja uma lógica mais complexa para definir "concluídas" para eles.
+          # Por enquanto, todas ativas são "cursando" para admin/prof.
+        disciplinas_cursando = todas_disciplinas
+        # Não haverá disciplinas "concluídas" para admin/professores nesta lógica simples,
+        # a menos que se queira listar disciplinas que não têm nenhuma matrícula "cursando"
+        # no sistema. Isso exigiria uma query mais complexa.
+        # Para o objetivo de "desabilitar concluídas na chamada", esta lógica é suficiente.
+
+
     conn.close()
     from datetime import date
     return render_template("presenca.html",
-        disciplinas=discs,
+        disciplinas_cursando=disciplinas_cursando,
+        disciplinas_concluidas=disciplinas_concluidas,
         hoje=date.today().isoformat())
 
 

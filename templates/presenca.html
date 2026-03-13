@@ -2,41 +2,53 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">📅 Registrar Chamada</h4>
+    <h4 class="fw-bold mb-0">📅 Selecionar Disciplina para Chamada</h4>
+    <a href="/" class="btn btn-outline-secondary">← Voltar ao Dashboard</a>
 </div>
 
-<div class="card mb-4" style="max-width:500px">
-    <div class="card-header fw-semibold">
-        📚 Selecionar Disciplina e Data
-    </div>
+<div class="card shadow-sm" style="max-width: 600px;">
     <div class="card-body">
-        <form method="GET" action="/presenca/chamada">
+        <form action="/presenca/chamada" method="GET">
             <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    Disciplina <span class="text-danger">*</span>
+                <label for="disciplina_id" class="form-label fw-semibold">
+                    📚 Disciplina
                 </label>
-                <select name="disciplina_id"
-                        class="form-select" required>
-                    <option value="">
-                        — Selecione a disciplina —
-                    </option>
-                    {% for d in disciplinas %}
-                    <option value="{{ d['id'] }}">
-                        {{ d['nome'] }}
-                    </option>
-                    {% endfor %}
+                <select name="disciplina_id" id="disciplina_id" class="form-select" required>
+                    <option value="">— Selecione uma disciplina —</option>
+
+                    {% if disciplinas_cursando %}
+                    <optgroup label="📖 Cursando">
+                        {% for disc in disciplinas_cursando %}
+                        <option value="{{ disc['id'] }}">{{ disc['nome'] }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endif %}
+
+                    {% if disciplinas_concluidas %}
+                    <optgroup label="✅ Concluídas (Desabilitadas)">
+                        {% for disc in disciplinas_concluidas %}
+                        <option value="{{ disc['id'] }}" disabled>{{ disc['nome'] }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endif %}
+
+                    {% if not disciplinas_cursando and not disciplinas_concluidas %}
+                    <option value="" disabled>Nenhuma disciplina disponível.</option>
+                    {% endif %}
                 </select>
+                <div class="form-text">
+                    Disciplinas concluídas não podem ser selecionadas para chamada.
+                </div>
             </div>
             <div class="mb-4">
-                <label class="form-label fw-semibold">
-                    Data da Aula <span class="text-danger">*</span>
+                <label for="data_aula" class="form-label fw-semibold">
+                    🗓️ Data da Aula
                 </label>
-                <input type="date" name="data_aula"
-                       class="form-control" required
-                       value="{{ hoje }}">
+                <input type="date" name="data_aula" id="data_aula"
+                       class="form-control" value="{{ hoje }}" required>
             </div>
-            <button type="submit" class="btn btn-primary w-100">
-                📋 Abrir Chamada
+            <button type="submit" class="btn btn-primary px-4">
+                Ver Chamada
             </button>
         </form>
     </div>
