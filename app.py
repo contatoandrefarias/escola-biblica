@@ -6,6 +6,7 @@ from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
 from werkzeug.security import generate_password_hash
 from database import conectar, inicializar_banco
+# Certifique-se de que 'auth' está no mesmo diretório ou no PYTHONPATH
 from auth import carregar_usuario, verificar_login
 
 app = Flask(__name__)
@@ -457,9 +458,9 @@ def editar_disciplina(id):
 
 
 # ══════════════════════════════════════
-# MATRICULAS
+# MATRICULAS (AGORA SERÁ A PÁGINA DE NOTAS)
 # ══════════════════════════════════════
-@app.route("/matriculas")
+@app.route("/matriculas") # Esta rota será a página de Notas
 @login_required
 def matriculas():
     conn   = conectar()
@@ -467,11 +468,12 @@ def matriculas():
     cursor.execute("""
         SELECT m.*,
                a.nome as aluno_nome,
-               d.nome as disciplina_nome
+               d.nome as disciplina_nome,
+               d.nota_minima
         FROM matriculas m
         JOIN alunos      a ON m.aluno_id      = a.id
         JOIN disciplinas d ON m.disciplina_id = d.id
-        ORDER BY a.nome
+        ORDER BY a.nome, d.nome
     """)
     lista = cursor.fetchall()
     conn.close()
@@ -484,7 +486,7 @@ def nova_matricula():
     conn   = conectar()
     cursor = conn.cursor()
     if request.method == "POST":
-        aluno_id = request.form.get("aluno_id")
+        aluno_id  = request.form.get("aluno_id")
         disc_id   = request.form.get("disciplina_id")
         data_ini  = request.form.get("data_inicio", "").strip()
         nota1     = request.form.get("nota1") or None
@@ -528,6 +530,16 @@ def editar_matricula(id):
         status     = request.form.get("status", "cursando")
         data_ini   = request.form.get("data_inicio", "").strip()
         data_con   = request.form.get("data_conclusao", "").strip()
+
+        # Calcular nota_final se não for fornecida e ambas as notas existirem
+        if nota_final is None and nota1 is not None and nota2 is not None:
+            try:
+                n1 = float(nota1)
+                n2 = float(nota2)
+                nota_final = (n1 + n2) / 2
+            except ValueError:
+                nota_final = None # Caso as notas não sejam números válidos
+
         cursor.execute("""
             UPDATE matriculas
             SET nota1=?,nota2=?,nota_final=?,
@@ -535,7 +547,7 @@ def editar_matricula(id):
             WHERE id=?
         """, (float(nota1) if nota1 else None,
               float(nota2) if nota2 else None,
-              float(nota_final) if nota_final else None,
+              float(nota_final) if nota_final is not None else None, # Garante que None seja salvo como NULL
               status,
               data_ini or None,
               data_con or None,
