@@ -1,144 +1,108 @@
 {% extends "base.html" %}
 {% block conteudo %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h4 class="fw-bold mb-1">
-            📋 Chamada — {{ disciplina['nome'] }}
-        </h4>
-        <span class="text-muted small">📅 {{ data_aula }}</span>
-        {% if disciplina['tem_atividades'] %}
-        <span class="badge bg-warning text-dark ms-2">
-            📝 Com Atividade
-        </span>
-        {% endif %}
-    </div>
-    <a href="/presenca" class="btn btn-outline-secondary btn-sm">
-        ← Voltar
-    </a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">📅 Chamada para {{ disciplina['nome'] }}</h4>
+    <a href="/presenca" class="btn btn-outline-secondary">← Voltar</a>
 </div>
 
-{% if alunos %}
 <form method="POST" action="/presenca/salvar">
     <input type="hidden" name="disciplina_id" value="{{ disciplina['id'] }}">
     <input type="hidden" name="data_aula" value="{{ data_aula }}">
 
-    <!-- Botões rápidos -->
-    <div class="card mb-3 border-0 bg-light">
-        <div class="card-body py-2 d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-success btn-sm"
-                    onclick="marcarTodos('pres',true)">
-                ✅ Todos Presentes
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm"
-                    onclick="marcarTodos('pres',false)">
-                ❌ Todos Ausentes
-            </button>
-            {% if disciplina['tem_atividades'] %}
-            <span class="border-start mx-1"></span>
-            <button type="button" class="btn btn-info btn-sm"
-                    onclick="marcarTodos('ativ',true)">
-                📝 Todos Fizeram Atividade
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="marcarTodos('ativ',false)">
-                📝 Nenhum Fez
-            </button>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Tabela de chamada -->
-    <div class="card shadow-sm">
+    <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span class="fw-semibold">
-                👥 {{ alunos|length }} aluno(s)
+                Alunos da aula de {{ data_aula|replace('-', '/') }}
             </span>
-            <span class="text-muted small">
-                ✅ <span id="contPres">0</span> presente(s)
+            <div class="d-flex gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-primary dropdown-toggle"
+                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Presença
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="marcarTodos('pres', true)">Marcar Todos Presentes</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="marcarTodos('pres', false)">Marcar Todos Ausentes</a></li>
+                    </ul>
+                </div>
                 {% if disciplina['tem_atividades'] %}
-                | 📝 <span id="contAtiv">0</span> atividade(s)
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-info dropdown-toggle"
+                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Atividade
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="marcarTodos('ativ', true)">Marcar Todos Fizeram</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="marcarTodos('ativ', false)">Marcar Nenhum Fez</a></li>
+                    </ul>
+                </div>
                 {% endif %}
-            </span>
+            </div>
         </div>
         <div class="card-body p-0">
             <table class="table table-hover mb-0 align-middle">
-                <thead class="table-dark">
+                <thead class="table-light">
                     <tr>
-                        <th class="text-center" style="width:40px">#</th>
-                        <th>Nome do Aluno</th>
-                        <th class="text-center" style="width:160px">
-                            ✅ Presenca
-                        </th>
+                        <th style="width:50px"></th>
+                        <th>Aluno</th>
+                        <th class="text-center">Presença (<span id="contPres">0</span>)</th>
                         {% if disciplina['tem_atividades'] %}
-                        <th class="text-center" style="width:160px">
-                            📝 Atividade
-                        </th>
+                        <th class="text-center">Atividade (<span id="contAtiv">0</span>)</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for a in alunos %}
+                    {% for aluno in alunos %}
                     <tr id="linha_{{ loop.index }}"
-                        style="{% if a['presente'] == 1 %}background:#d1e7dd{% endif %}">
-
-                        <td class="text-center text-muted fw-bold">
-                            {{ loop.index }}
+                        {% if aluno['presente'] %}style="background-color:#d1e7dd"{% endif %}>
+                        <td>
+                            <a href="/alunos/{{ aluno['mat_id'] }}/trilha"
+                               class="btn btn-sm btn-outline-primary"
+                               title="Ver Trilha do Aluno">
+                                👤
+                            </a>
                         </td>
-
-                        <td class="fw-semibold">{{ a['nome'] }}</td>
-
-                        <!-- PRESENÇA -->
+                        <td class="fw-semibold">{{ aluno['nome'] }}</td>
                         <td class="text-center">
-                            <div class="d-flex align-items-center
-                                        justify-content-center gap-2">
-                                <div class="form-check form-switch mb-0">
-                                    <input type="checkbox"
-                                           class="form-check-input pres-chk"
-                                           role="switch"
-                                           name="presenca_{{ a['mat_id'] }}"
-                                           id="pres_{{ loop.index }}"
-                                           data-idx="{{ loop.index }}"
-                                           style="width:2.8rem;height:1.4rem;cursor:pointer"
-                                           onchange="togglePres(this)"
-                                           {% if a['presente'] == 1 %}checked{% endif %}>
-                                </div>
-                                <span id="plbl_{{ loop.index }}"
-                                      class="small fw-semibold"
-                                      style="min-width:65px">
-                                    {% if a['presente'] == 1 %}
-                                    <span class="text-success">Presente</span>
-                                    {% else %}
-                                    <span class="text-danger">Ausente</span>
-                                    {% endif %}
-                                </span>
+                            <div class="form-check form-switch d-inline-flex align-items-center gap-2">
+                                <input type="checkbox" name="presenca_{{ aluno['mat_id'] }}"
+                                       class="form-check-input pres-chk"
+                                       id="presenca_{{ aluno['mat_id'] }}"
+                                       data-idx="{{ loop.index }}"
+                                       onchange="togglePres(this)"
+                                       style="width:2.8rem;height:1.4rem"
+                                       {% if aluno['presente'] %}checked{% endif %}>
+                                <label class="form-check-label" for="presenca_{{ aluno['mat_id'] }}">
+                                    <span id="plbl_{{ loop.index }}">
+                                        {% if aluno['presente'] %}
+                                        <span class="text-success">Presente</span>
+                                        {% else %}
+                                        <span class="text-danger">Ausente</span>
+                                        {% endif %}
+                                    </span>
+                                </label>
                             </div>
                         </td>
-
-                        <!-- ATIVIDADE -->
                         {% if disciplina['tem_atividades'] %}
                         <td class="text-center">
-                            <div class="d-flex align-items-center
-                                        justify-content-center gap-2">
-                                <div class="form-check mb-0">
-                                    <input type="checkbox"
-                                           class="form-check-input ativ-chk"
-                                           name="atividade_{{ a['mat_id'] }}"
-                                           id="ativ_{{ loop.index }}"
-                                           data-idx="{{ loop.index }}"
-                                           style="width:1.4rem;height:1.4rem;cursor:pointer"
-                                           onchange="toggleAtiv(this)"
-                                           {% if a['fez_atividade'] == 1 %}checked{% endif %}>
-                                </div>
-                                <span id="albl_{{ loop.index }}"
-                                      class="small fw-semibold"
-                                      style="min-width:65px">
-                                    {% if a['fez_atividade'] == 1 %}
-                                    <span class="text-info">Fez ✔</span>
-                                    {% else %}
-                                    <span class="text-muted">Nao fez</span>
-                                    {% endif %}
-                                </span>
+                            <div class="form-check form-switch d-inline-flex align-items-center gap-2">
+                                <input type="checkbox" name="atividade_{{ aluno['mat_id'] }}"
+                                       class="form-check-input ativ-chk"
+                                       id="atividade_{{ aluno['mat_id'] }}"
+                                       data-idx="{{ loop.index }}"
+                                       onchange="toggleAtiv(this)"
+                                       style="width:2.8rem;height:1.4rem"
+                                       {% if aluno['fez_atividade'] %}checked{% endif %}>
+                                <label class="form-check-label" for="atividade_{{ aluno['mat_id'] }}">
+                                    <span id="albl_{{ loop.index }}">
+                                        {% if aluno['fez_atividade'] %}
+                                        <span class="text-info">Fez ✔</span>
+                                        {% else %}
+                                        <span class="text-muted">Não fez</span>
+                                        {% endif %}
+                                    </span>
+                                </label>
                             </div>
                         </td>
                         {% endif %}
@@ -184,9 +148,9 @@ function toggleAtiv(el) {
     var idx = el.dataset.idx;
     var lbl = document.getElementById("albl_" + idx);
     if (el.checked) {
-        lbl.innerHTML = '<span class="text-info">Fez \u2714</span>';
+        lbl.innerHTML = '<span class="text-info">Fez &#10004;</span>'; // Unicode checkmark
     } else {
-        lbl.innerHTML = '<span class="text-muted">Nao fez</span>';
+        lbl.innerHTML = '<span class="text-muted">Não fez</span>';
     }
     atualizar();
 }
