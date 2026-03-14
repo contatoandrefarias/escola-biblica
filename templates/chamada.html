@@ -2,141 +2,95 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">
-        📝 Chamada / Presença: {{ disciplina_nome }} ({{ data_aula|replace('-', '/') }})
-    </h4>
-    <a href="/presenca" class="btn btn-outline-secondary">← Voltar à Seleção</a>
+    <h4 class="fw-bold mb-0">🗓️ Chamada de Alunos</h4>
+    <a href="/" class="btn btn-outline-secondary">← Voltar ao Dashboard</a>
 </div>
 
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold">
+        Selecionar Disciplina e Data
+    </div>
+    <div class="card-body">
+        <form action="/presenca/chamada" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label for="disciplina_id" class="form-label fw-semibold">Disciplina</label>
+                <select name="disciplina_id" id="disciplina_id" class="form-select" required>
+                    <option value="">— Selecione a Disciplina —</option>
+                    {% for disc in disciplinas %}
+                    <option value="{{ disc['id'] }}"
+                            {% if selected_disciplina == disc['id'] %}selected{% endif %}>
+                        {{ disc['nome'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="data_aula" class="form-label fw-semibold">Data da Aula</label>
+                <input type="date" name="data_aula" id="data_aula" class="form-control"
+                       value="{{ selected_data_aula }}" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i> Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_disciplina and alunos_chamada is not none %}
 <div class="card shadow-sm">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Alunos Matriculados</h5>
-        <div class="small text-muted">
-            <i class="bi bi-info-circle me-1"></i> Status da aula:
-            {% if alunos|length > 0 and alunos[0]['presente_hoje'] is not none %}
-                <span class="text-success fw-bold">Chamada já registrada</span>
-            {% else %}
-                <span class="text-warning fw-bold">Chamada pendente</span>
-            {% endif %}
-        </div>
+    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        Chamada para {{ disciplinas | selectattr('id', '==', selected_disciplina) | map(attribute='nome') | first }} em {{ selected_data_aula|replace('-', '/') }}
+        {% if faixa_etaria %}
+            <span class="badge bg-secondary ms-2">Turma: {{ faixa_etaria|replace('_', ' ')|title }}</span>
+        {% endif %}
     </div>
     <div class="card-body p-0">
-        <form method="POST" action="/presenca/chamada?disciplina_id={{ disciplina_id }}&data_aula={{ data_aula }}">
+        <form action="/presenca/chamada" method="POST">
+            <input type="hidden" name="disciplina_id" value="{{ selected_disciplina }}">
+            <input type="hidden" name="data_aula" value="{{ selected_data_aula }}">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-dark">
                         <tr>
                             <th>Aluno</th>
-                            {% if faixa_etaria and (faixa_etaria.startswith('adolescentes') or faixa_etaria.startswith('jovens')) %}
-                                <th class="text-center">N1</th>
-                                <th class="text-center">Média</th>
-                            {% elif faixa_etaria == 'adultos' %}
-                                <th class="text-center">N1</th>
-                                <th class="text-center">N2</th>
-                                <th class="text-center">Média</th>
-                            {% endif %}
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Frequência</th>
-                            <th class="text-center">Presença</th>
+                            <th>Faixa Etária</th> {# Nova coluna #}
+                            <th class="text-center">Presente</th>
                             {% if tem_atividades %}
-                            <th class="text-center">Atividade</th>
+                            <th class="text-center">Fez Atividade</th>
                             {% endif %}
                         </tr>
                     </thead>
                     <tbody>
-                        {% if alunos %}
-                        {% for aluno in alunos %}
+                        {% if alunos_chamada %}
+                        {% for aluno in alunos_chamada %}
                         <tr>
-                            <td class="fw-semibold">{{ aluno['aluno_nome'] }}</td>
-                            {% if faixa_etaria and (faixa_etaria.startswith('adolescentes') or faixa_etaria.startswith('jovens')) %}
-                                <td class="text-center">
-                                    {% if aluno['nota1'] is not none %}
-                                        {{ aluno['nota1']|round(1) }}
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if aluno['nota_final'] is not none %}
-                                        <span class="fw-bold
-                                            {% if aluno['nota_final'] >= aluno['nota_minima'] %}text-success
-                                            {% else %}text-danger{% endif %}">
-                                            {{ aluno['nota_final']|round(1) }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-                            {% elif faixa_etaria == 'adultos' %}
-                                <td class="text-center">
-                                    {% if aluno['nota1'] is not none %}
-                                        {{ aluno['nota1']|round(1) }}
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if aluno['nota2'] is not none %}
-                                        {{ aluno['nota2']|round(1) }}
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if aluno['nota_final'] is not none %}
-                                        <span class="fw-bold
-                                            {% if aluno['nota_final'] >= aluno['nota_minima'] %}text-success
-                                            {% else %}text-danger{% endif %}">
-                                            {{ aluno['nota_final']|round(1) }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-                            {% endif %}
-                            <td class="text-center">
-                                {% if aluno['status'] == 'aprovado' %}
-                                    <span class="badge bg-success">✅ Aprovado</span>
-                                {% elif aluno['status'] == 'reprovado' %}
-                                    <span class="badge bg-danger">❌ Reprovado</span>
+                            <td>{{ aluno['aluno_nome'] }}</td>
+                            <td>
+                                {% if aluno['faixa_etaria'] %}
+                                    {{ aluno['faixa_etaria']|replace('_', ' ')|title }}
                                 {% else %}
-                                    <span class="badge bg-primary">📖 Cursando</span>
+                                    <span class="text-muted">N/A</span>
                                 {% endif %}
-                            </td>
+                            </td> {# Exibe a faixa etária #}
                             <td class="text-center">
-                                {% if aluno['total_aulas'] and aluno['total_aulas'] > 0 %}
-                                {% set freq = ((aluno['total_presencas'] or 0) / aluno['total_aulas'] * 100)|round(1) %}
-                                <span class="fw-bold
-                                    {% if freq >= aluno['frequencia_minima'] %}text-success
-                                    {% else %}text-danger{% endif %}">
-                                    {{ freq }}%
-                                </span>
-                                <div class="small text-muted">
-                                    ({{ aluno['total_presencas'] or 0 }}/{{ aluno['total_aulas'] }})
-                                </div>
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                <div class="form-check form-switch d-inline-block">
-                                    <input class="form-check-input" type="checkbox" role="switch"
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox"
                                            id="presente_{{ aluno['matricula_id'] }}"
                                            name="presente_{{ aluno['matricula_id'] }}"
-                                           {% if aluno['presente_hoje'] == 1 %}checked{% endif %}>
-                                    <label class="form-check-label visually-hidden"
-                                           for="presente_{{ aluno['matricula_id'] }}">Presente</label>
+                                           {% if aluno['presente'] %}checked{% endif %}>
+                                    <label class="form-check-label" for="presente_{{ aluno['matricula_id'] }}">Sim</label>
                                 </div>
                             </td>
                             {% if tem_atividades %}
                             <td class="text-center">
-                                <div class="form-check form-switch d-inline-block">
-                                    <input class="form-check-input" type="checkbox" role="switch"
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox"
                                            id="atividade_{{ aluno['matricula_id'] }}"
                                            name="atividade_{{ aluno['matricula_id'] }}"
-                                           {% if aluno['fez_atividade_hoje'] == 1 %}checked{% endif %}>
-                                    <label class="form-check-label visually-hidden"
-                                           for="atividade_{{ aluno['matricula_id'] }}">Atividade</label>
+                                           {% if aluno['fez_atividade'] %}checked{% endif %}>
+                                    <label class="form-check-label" for="atividade_{{ aluno['matricula_id'] }}">Sim</label>
                                 </div>
                             </td>
                             {% endif %}
@@ -144,7 +98,7 @@
                         {% endfor %}
                         {% else %}
                         <tr>
-                            <td colspan="{% if faixa_etaria and (faixa_etaria.startswith('adolescentes') or faixa_etaria.startswith('jovens')) %}7{% elif faixa_etaria == 'adultos' %}8{% else %}5{% endif %}"
+                            <td colspan="{% if tem_atividades %}4{% else %}3{% endif %}"
                                 class="text-center py-5 text-muted">
                                 <div class="fs-1 mb-2">🤷‍♂️</div>
                                 Nenhum aluno matriculado nesta disciplina ou com status 'cursando'.
@@ -162,5 +116,11 @@
         </form>
     </div>
 </div>
+{% elif selected_disciplina and alunos_chamada is none %}
+<div class="alert alert-warning text-center" role="alert">
+    <h4 class="alert-heading">Disciplina não encontrada ou inativa!</h4>
+    <p>Por favor, selecione uma disciplina válida e ativa para fazer a chamada.</p>
+</div>
+{% endif %}
 
 {% endblock %}
