@@ -2,116 +2,94 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">✏️ Editar Turma</h4>
-    <a href="/turmas" class="btn btn-outline-secondary">← Voltar</a>
+    <h4 class="fw-bold mb-0">✏️ Editar Turma: {{ turma['nome'] }}</h4>
+    <a href="/turmas" class="btn btn-outline-secondary">← Voltar às Turmas</a>
 </div>
 
-<div class="row g-4">
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header">Dados da Turma</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <form method="POST">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Nome <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" name="nome"
-                               class="form-control" required
+                        <label for="nome" class="form-label fw-semibold">Nome da Turma</label>
+                        <input type="text" name="nome" id="nome" class="form-control" required
                                value="{{ turma['nome'] }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Faixa Etária
-                        </label>
-                        <select name="faixa_etaria" class="form-select">
-                            <option value="">— Selecione —</option>
-                            {% for op in ["0 a 5 anos","6 a 9 anos",
-                                "10 a 12 anos","13 a 17 anos",
-                                "18 a 25 anos","26 a 40 anos",
-                                "Acima de 40 anos","Todas as idades"] %}
-                            <option value="{{ op }}"
-                                {% if turma['faixa_etaria'] == op %}
-                                    selected{% endif %}>
-                                {{ op }}
-                            </option>
-                            {% endfor %}
+                        <label for="descricao" class="form-label fw-semibold">Descrição (Opcional)</label>
+                        <textarea name="descricao" id="descricao" class="form-control" rows="3">{{ turma['descricao'] }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="faixa_etaria" class="form-label fw-semibold">Faixa Etária</label>
+                        <select name="faixa_etaria" id="faixa_etaria" class="form-select" required>
+                            <option value="">— Selecione a Faixa Etária —</option>
+                            <option value="criancas" {% if turma['faixa_etaria'] == 'criancas' %}selected{% endif %}>Crianças</option>
+                            <option value="adolescentes_jovens" {% if turma['faixa_etaria'] == 'adolescentes_jovens' %}selected{% endif %}>Adolescentes e Jovens</option>
+                            <option value="adultos" {% if turma['faixa_etaria'] == 'adultos' %}selected{% endif %}>Adultos</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            Descrição
-                        </label>
-                        <textarea name="descricao"
-                                  class="form-control" rows="3">{{ turma['descricao'] or '' }}</textarea>
-                    </div>
-                    <div class="mb-4">
-                        <div class="form-check form-switch">
-                            <input type="checkbox" name="ativa"
-                                   class="form-check-input" id="ativa"
-                                   style="width:2.5rem;height:1.3rem"
-                                   {% if turma['ativa'] %}checked{% endif %}>
-                            <label class="form-check-label ms-2"
-                                   for="ativa">
-                                ✅ Turma Ativa
-                            </label>
+
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="ativa" name="ativa"
+                               {% if turma['ativa'] == 1 %}checked{% endif %}>
+                        <label class="form-check-label fw-semibold" for="ativa">Turma Ativa</label>
+                        <div class="form-text">
+                            Turmas inativas não aparecerão nas listas de seleção para novos alunos ou matrículas.
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-warning w-100">
-                        💾 Salvar Alterações
-                    </button>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning px-4">
+                            <i class="bi bi-save-fill me-2"></i> Salvar Alterações
+                        </button>
+                        <a href="/turmas" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="col-md-7">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between">
-                <span>👥 Alunos desta Turma</span>
-                <span class="badge bg-primary">
-                    {{ alunos_turma|length }}
-                </span>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                Alunos nesta Turma ({{ alunos_turma|length }})
             </div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nome</th>
-                            <th>Telefone</th>
-                            <th class="text-center">Tipo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if alunos_turma %}
-                        {% for a in alunos_turma %}
-                        <tr>
-                            <td class="fw-semibold">{{ a['nome'] }}</td>
-                            <td>{{ a['telefone'] or '—' }}</td>
-                            <td class="text-center">
-                                {% if a['membro_igreja'] %}
-                                <span class="badge bg-primary">✝️ Membro</span>
-                                {% else %}
-                                <span class="badge bg-secondary">👤 Visitante</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% else %}
-                        <tr>
-                            <td colspan="3"
-                                class="text-center py-5 text-muted">
-                                Nenhum aluno nesta turma ainda.
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="card-footer">
-                <a href="/alunos/novo" class="btn btn-sm btn-outline-primary">
-                    ➕ Adicionar Aluno
-                </a>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome do Aluno</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if alunos_turma %}
+                            {% for aluno in alunos_turma %}
+                            <tr>
+                                <td>{{ aluno['nome'] }}</td>
+                                <td class="text-center">
+                                    <a href="/alunos/{{ aluno['id'] }}/editar" class="btn btn-sm btn-info" title="Ver/Editar Aluno">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center py-4 text-muted">
+                                    <div class="fs-1 mb-2">🤷‍♂️</div>
+                                    Nenhum aluno cadastrado nesta turma.
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
