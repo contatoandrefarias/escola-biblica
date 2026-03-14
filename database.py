@@ -131,6 +131,10 @@ def inicializar_banco():
             participacao REAL,
             desafio REAL,
             prova REAL,
+            meditacao REAL,   -- Nova coluna
+            versiculos REAL,  -- Nova coluna
+            desafio_nota REAL, -- Nova coluna (renomeado para evitar conflito com 'desafio' antigo)
+            visitante REAL,   -- Nova coluna
             status TEXT DEFAULT 'cursando', -- 'cursando', 'aprovado', 'reprovado'
             UNIQUE(aluno_id, disciplina_id),
             FOREIGN KEY (aluno_id) REFERENCES alunos(id),
@@ -226,16 +230,34 @@ def inicializar_banco():
         cursor.execute("ALTER TABLE matriculas ADD COLUMN prova REAL")
     except sqlite3.OperationalError:
         pass
+    # Novas colunas para Adolescentes/Jovens
+    try:
+        cursor.execute("ALTER TABLE matriculas ADD COLUMN meditacao REAL")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE matriculas ADD COLUMN versiculos REAL")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE matriculas ADD COLUMN desafio_nota REAL") # Renomeado para evitar conflito
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE matriculas ADD COLUMN visitante REAL")
+    except sqlite3.OperationalError:
+        pass
+
 
     # Inserir usuário admin padrão se não existir
     cursor.execute("SELECT COUNT(*) FROM usuarios WHERE email = 'admin@escola.com'")
     if cursor.fetchone()[0] == 0:
-        admin_senha_hash = generate_password_hash("admin123")
-        cursor.execute(
-            "INSERT INTO usuarios (nome, email, senha_hash, perfil) VALUES (?, ?, ?, ?)",
-            ("Administrador", "admin@escola.com", admin_senha_hash, "admin")
-        )
-        print("  Adm criado: admin@escola.com / admin123")
+        cursor.execute("""
+            INSERT INTO usuarios (nome,email,senha_hash,perfil)
+            VALUES (?,?,?,'admin')
+        """, ("Administrador", "admin@escola.com",
+              generate_password_hash("admin123")))
+        print("Adm criado: admin@escola.com / admin123")
 
     conn.commit()
     conn.close()

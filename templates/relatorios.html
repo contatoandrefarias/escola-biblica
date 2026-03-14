@@ -6,46 +6,45 @@
     <a href="/" class="btn btn-outline-secondary">← Voltar ao Dashboard</a>
 </div>
 
-<!-- Formulário de Filtros -->
 <div class="card shadow-sm mb-4">
     <div class="card-header fw-semibold">
-        Filtrar Relatórios
+        Filtros de Relatório
     </div>
     <div class="card-body">
         <form id="filterForm" action="/relatorios" method="GET" class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label for="disciplina_id" class="form-label small text-muted">Disciplina</label>
+                <label for="disciplina_id" class="form-label fw-semibold">Disciplina</label>
                 <select name="disciplina_id" id="disciplina_id" class="form-select">
                     <option value="">Todas as Disciplinas</option>
                     {% for disc in disciplinas %}
                     <option value="{{ disc['id'] }}"
-                        {% if selected_disciplina == disc['id'] %}selected{% endif %}>
+                            {% if selected_disciplina == disc['id'] %}selected{% endif %}>
                         {{ disc['nome'] }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="data_inicio" class="form-label small text-muted">Data Início</label>
+                <label for="data_inicio" class="form-label fw-semibold">Data Início (Matrícula)</label>
                 <input type="date" name="data_inicio" id="data_inicio" class="form-control"
-                       value="{{ selected_data_inicio or '' }}">
+                       value="{{ selected_data_inicio }}">
             </div>
             <div class="col-md-3">
-                <label for="data_fim" class="form-label small text-muted">Data Fim</label>
+                <label for="data_fim" class="form-label fw-semibold">Data Fim (Matrícula)</label>
                 <input type="date" name="data_fim" id="data_fim" class="form-control"
-                       value="{{ selected_data_fim or '' }}">
+                       value="{{ selected_data_fim }}">
             </div>
             <div class="col-md-2">
-                <label for="status_filtro" class="form-label small text-muted">Status</label>
+                <label for="status_filtro" class="form-label fw-semibold">Status</label>
                 <select name="status_filtro" id="status_filtro" class="form-select">
-                    <option value="todos" {% if selected_status == 'todos' %}selected{% endif %}>Todos</option>
-                    <option value="cursando" {% if selected_status == 'cursando' %}selected{% endif %}>Cursando</option>
-                    <option value="aprovado" {% if selected_status == 'aprovado' %}selected{% endif %}>Aprovado</option>
-                    <option value="reprovado" {% if selected_status == 'reprovado' %}selected{% endif %}>Reprovado</option>
+                    <option value="todos" {% if selected_status_filtro == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="cursando" {% if selected_status_filtro == 'cursando' %}selected{% endif %}>Cursando</option>
+                    <option value="aprovado" {% if selected_status_filtro == 'aprovado' %}selected{% endif %}>Aprovado</option>
+                    <option value="reprovado" {% if selected_status_filtro == 'reprovado' %}selected{% endif %}>Reprovado</option>
                 </select>
             </div>
-            <div class="col-12 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-primary px-4">
                     <i class="bi bi-funnel-fill me-2"></i> Aplicar Filtros
                 </button>
                 <a href="/relatorios" class="btn btn-outline-secondary">
@@ -104,13 +103,16 @@
                         {% if item['faixa_etaria'] and item['faixa_etaria'].startswith('criancas') %}
                             <span class="text-muted">N/A</span>
                         {% elif item['faixa_etaria'] and (item['faixa_etaria'].startswith('adolescentes') or item['faixa_etaria'].startswith('jovens')) %}
-                            {% if item['nota1'] is not none %}
-                                <span class="fw-bold
-                                    {% if item['nota1'] >= item['nota_minima'] %}text-success
-                                    {% else %}text-danger{% endif %}">
-                                    {{ item['nota1']|round(1) }}
-                                </span>
-                            {% else %}—{% endif %}
+                            {% set meditacao_val = item['meditacao'] if item['meditacao'] is not none else 0 %}
+                            {% set versiculos_val = item['versiculos'] if item['versiculos'] is not none else 0 %}
+                            {% set desafio_nota_val = item['desafio_nota'] if item['desafio_nota'] is not none else 0 %}
+                            {% set visitante_val = item['visitante'] if item['visitante'] is not none else 0 %}
+                            {% set nota_final_calc = meditacao_val + versiculos_val + desafio_nota_val + visitante_val %}
+                            <span class="fw-bold
+                                {% if nota_final_calc >= item['nota_minima'] %}text-success
+                                {% else %}text-danger{% endif %}">
+                                {{ nota_final_calc|round(1) }}
+                            </span>
                         {% else %} {# Adultos #}
                             {% if item['nota_final'] is not none %}
                                 <span class="fw-bold
