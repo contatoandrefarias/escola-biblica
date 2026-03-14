@@ -2,71 +2,79 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">👤 Alunos</h4>
-    <a href="/alunos/novo" class="btn btn-primary">
-        ➕ Novo Aluno
+    <h4 class="fw-bold mb-0">🧑‍🎓 Alunos</h4>
+    <a href="/alunos/novo" class="btn btn-success">
+        <i class="bi bi-person-plus-fill me-2"></i> Novo Aluno
     </a>
 </div>
 
-<div class="card">
+<div class="card shadow-sm">
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Nome</th>
-                    <th>Telefone</th>
-                    <th>Situação</th>
-                    <th>Cadastro</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if alunos %}
-                    {% for a in alunos %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-dark">
                     <tr>
-                        <td class="text-muted">{{ a['id'] }}</td>
-                        <td class="fw-semibold">{{ a['nome'] }}</td>
-                        <td>{{ a['telefone'] or '—' }}</td>
-                        <td>
-                            {% if a['membro_igreja'] %}
-                                <span class="badge bg-primary">
-                                    ✝️ Membro
-                                </span>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>E-mail</th>
+                        <th class="text-center">Data Nasc.</th>
+                        <th class="text-center">Membro Igreja</th>
+                        <th class="text-center">Turma</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if alunos %}
+                    {% for aluno in alunos %}
+                    <tr>
+                        <td>{{ aluno['nome'] }}</td>
+                        <td>{{ aluno['telefone'] if aluno['telefone'] else '—' }}</td>
+                        <td>{{ aluno['email'] if aluno['email'] else '—' }}</td>
+                        <td class="text-center">{{ aluno['data_nascimento']|replace('-', '/') if aluno['data_nascimento'] else '—' }}</td>
+                        <td class="text-center">
+                            {% if aluno['membro_igreja'] %}
+                                <span class="badge bg-success">Sim</span>
                             {% else %}
-                                <span class="badge bg-secondary">
-                                    👤 Visitante
-                                </span>
+                                <span class="badge bg-secondary">Não</span>
                             {% endif %}
                         </td>
-                        <td class="text-muted small">
-                            {{ a['data_cadastro'] }}
+                        <td class="text-center">
+                            {% if aluno['turma_nome'] %}
+                                {{ aluno['turma_nome'] }} ({{ aluno['faixa_etaria']|replace('_', ' ')|title }})
+                            {% else %}
+                                <span class="text-muted">Não atribuída</span>
+                            {% endif %}
                         </td>
-                        <td>
-                            <a href="/alunos/{{ a['id'] }}/trilha"
-                               class="btn btn-sm btn-success">
-                                📋 Trilha
+                        <td class="text-center">
+                            <a href="/alunos/{{ aluno['id'] }}/trilha" class="btn btn-sm btn-info" title="Ver Trilha de Aprendizado">
+                                <i class="bi bi-journal-richtext"></i>
                             </a>
-                            <a href="/alunos/{{ a['id'] }}/editar"
-                               class="btn btn-sm btn-warning">
-                                ✏️ Editar
+                            <a href="/alunos/{{ aluno['id'] }}/editar" class="btn btn-sm btn-primary" title="Editar Aluno">
+                                <i class="bi bi-pencil-fill"></i>
                             </a>
+                            <form action="/alunos/{{ aluno['id'] }}/excluir" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir Aluno"
+                                    onclick="return confirm('Tem certeza que deseja excluir o aluno {{ aluno['nome'] }} e todas as suas matrículas?');">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}
-                {% else %}
+                    {% else %}
                     <tr>
-                        <td colspan="6"
-                            class="text-center py-5 text-muted">
-                            Nenhum aluno cadastrado ainda.
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <div class="fs-1 mb-2">🤷‍♂️</div>
+                            Nenhum aluno cadastrado.
                         </td>
                     </tr>
-                {% endif %}
-            </tbody>
-        </table>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="card-footer text-muted small">
-        Total: {{ alunos|length }} aluno(s)
+        Total de registros: {{ alunos|length }}
     </div>
 </div>
 
