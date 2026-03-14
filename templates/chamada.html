@@ -42,9 +42,7 @@
 <div class="card shadow-sm">
     <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
         Chamada para {{ disciplinas | selectattr('id', '==', selected_disciplina) | map(attribute='nome') | first }} em {{ selected_data_aula|replace('-', '/') }}
-        {% if faixa_etaria %}
-            <span class="badge bg-secondary ms-2">Turma: {{ faixa_etaria|replace('_', ' ')|title }}</span>
-        {% endif %}
+        {# Removido o badge de faixa etária da disciplina, conforme solicitado #}
     </div>
     <div class="card-body p-0">
         <form action="/presenca/chamada" method="POST">
@@ -55,7 +53,7 @@
                     <thead class="table-dark">
                         <tr>
                             <th>Aluno</th>
-                            <th>Faixa Etária</th> {# Nova coluna #}
+                            <th>Faixa Etária</th>
                             <th class="text-center">Presente</th>
                             {% if tem_atividades %}
                             <th class="text-center">Fez Atividade</th>
@@ -73,7 +71,7 @@
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
-                            </td> {# Exibe a faixa etária #}
+                            </td>
                             <td class="text-center">
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox"
