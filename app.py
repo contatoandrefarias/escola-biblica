@@ -700,7 +700,14 @@ def salvar_chamada():
 def relatorios():
     conn   = conectar()
     cursor = conn.cursor()
-    cursor.execute("""
+
+    # Obter parâmetros de filtro da URL
+    disciplina_id = request.args.get("disciplina_id")
+    data_inicio   = request.args.get("data_inicio")
+    data_fim      = request.args.get("data_fim")
+    status_filtro = request.args.get("status_filtro") # 'todos', 'aprovados', 'reprovados'
+
+    query = """
         SELECT
             a.nome  as aluno,
             d.nome  as disciplina,
@@ -715,12 +722,49 @@ def relatorios():
         JOIN alunos      a ON m.aluno_id      = a.id
         JOIN disciplinas d ON m.disciplina_id = d.id
         LEFT JOIN presencas p ON p.matricula_id = m.id
+        WHERE 1=1
+    """
+    params = []
+
+    if disciplina_id:
+        query += " AND d.id = ?"
+        params.append(disciplina_id)
+
+    if data_inicio:
+        query += " AND m.data_inicio >= ?"
+        params.append(data_inicio)
+
+    if data_fim:
+        query += " AND m.data_conclusao <= ?"
+        params.append(data_fim)
+
+    if status_filtro == 'aprovados':
+        query += " AND m.status = 'aprovado'"
+    elif status_filtro == 'reprovados':
+        query += " AND m.status = 'reprovado'"
+    # Se 'todos' ou vazio, não adiciona filtro de status
+
+    query += """
         GROUP BY m.id
-        ORDER BY a.nome
-    """)
+        ORDER BY a.nome, d.nome
+    """
+
+    cursor.execute(query, tuple(params))
     dados = cursor.fetchall()
+
+    # Obter todas as disciplinas para o filtro
+    cursor.execute("SELECT id, nome FROM disciplinas ORDER BY nome")
+    disciplinas_filtro = cursor.fetchall()
+
     conn.close()
-    return render_template("relatorios.html", dados=dados)
+    return render_template("relatorios.html",
+        dados=dados,
+        disciplinas=disciplinas_filtro,
+        # Passar os filtros atuais para manter a seleção no formulário
+        selected_disciplina=disciplina_id,
+        selected_data_inicio=data_inicio,
+        selected_data_fim=data_fim,
+        selected_status=status_filtro)
 
 
 # ══════════════════════════════════════
