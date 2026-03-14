@@ -27,18 +27,33 @@
                             <option value="" data-description="Selecione a faixa etária para definir a lógica de avaliação.">
                                 — Selecione a Faixa Etária —
                             </option>
-                            <option value="criancas"
-                                    data-description="Não há notas. Status baseado apenas na frequência. (Ex: 0-10 anos)"
-                                    {% if turma['faixa_etaria'] == 'criancas' %}selected{% endif %}>
-                                Crianças
+                            <option value="criancas_0_3"
+                                    data-description="Não há notas. Status baseado apenas na frequência. (0-3 anos)"
+                                    {% if turma['faixa_etaria'] == 'criancas_0_3' %}selected{% endif %}>
+                                Crianças (0-3 anos)
                             </option>
-                            <option value="adolescentes_jovens"
-                                    data-description="Uma nota (N1) composta por Participação (1), Desafio (1) e Prova (8). Status baseado em N1 e frequência. (Ex: 11-17 anos)"
-                                    {% if turma['faixa_etaria'] == 'adolescentes_jovens' %}selected{% endif %}>
-                                Adolescentes e Jovens
+                            <option value="criancas_4_7"
+                                    data-description="Não há notas. Status baseado apenas na frequência. (4-7 anos)"
+                                    {% if turma['faixa_etaria'] == 'criancas_4_7' %}selected{% endif %}>
+                                Crianças (4-7 anos)
+                            </option>
+                            <option value="criancas_8_12"
+                                    data-description="Não há notas. Status baseado apenas na frequência. (8-12 anos)"
+                                    {% if turma['faixa_etaria'] == 'criancas_8_12' %}selected{% endif %}>
+                                Crianças (8-12 anos)
+                            </option>
+                            <option value="adolescentes_13_15"
+                                    data-description="Uma nota (N1) composta por Participação (1), Desafio (1) e Prova (8). Status baseado em N1 e frequência. (13-15 anos)"
+                                    {% if turma['faixa_etaria'] == 'adolescentes_13_15' %}selected{% endif %}>
+                                Adolescentes (13-15 anos)
+                            </option>
+                            <option value="jovens_16_17"
+                                    data-description="Uma nota (N1) composta por Participação (1), Desafio (1) e Prova (8). Status baseado em N1 e frequência. (16-17 anos)"
+                                    {% if turma['faixa_etaria'] == 'jovens_16_17' %}selected{% endif %}>
+                                Jovens (16-17 anos)
                             </option>
                             <option value="adultos"
-                                    data-description="Duas notas (N1 e N2). Média final de N1 e N2. Status baseado na média e frequência. (Ex: 18+ anos)"
+                                    data-description="Duas notas (N1 e N2). Média final de N1 e N2. Status baseado na média e frequência."
                                     {% if turma['faixa_etaria'] == 'adultos' %}selected{% endif %}>
                                 Adultos
                             </option>
@@ -66,7 +81,6 @@
             </div>
         </div>
     </div>
-
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-header fw-semibold">

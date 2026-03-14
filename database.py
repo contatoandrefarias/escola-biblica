@@ -29,7 +29,7 @@ def inicializar_banco():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL UNIQUE,
             descricao TEXT,
-            faixa_etaria TEXT, -- 'criancas_4_7', 'criancas_8_12', 'adolescentes_13_15', 'jovens_16_17', 'adultos'
+            faixa_etaria TEXT, -- 'criancas_0_3', 'criancas_4_7', 'criancas_8_12', 'adolescentes_13_15', 'jovens_16_17', 'adultos'
             ativa INTEGER DEFAULT 1
         )
     """)
@@ -42,10 +42,8 @@ def inicializar_banco():
             pass # Ignora se a tabela não existe, pois será criada logo em seguida
         else:
             print(f"Aviso: Erro inesperado ao renomear alunos: {e}") # Imprime o erro mas não trava
-            # raise e # REMOVIDO: Não re-lançar o erro para permitir a inicialização
     except Exception as e:
         print(f"Aviso: Erro inesperado ao renomear alunos: {e}")
-        # raise e # REMOVIDO
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alunos (
@@ -61,7 +59,7 @@ def inicializar_banco():
     """)
 
     cursor.execute("PRAGMA table_info(alunos_old)")
-    if cursor.fetchone(): # Se alunos_old existe, copia os dados
+    if cursor.fetchone():
         cursor.execute("""
             INSERT INTO alunos (id, nome, telefone, email, data_nascimento, membro_igreja, turma_id)
             SELECT id, nome, telefone, email, data_nascimento, membro_igreja, turma_id
@@ -76,13 +74,11 @@ def inicializar_banco():
         cursor.execute("ALTER TABLE professores RENAME TO professores_old")
     except sqlite3.OperationalError as e:
         if "no such table" in str(e):
-            pass # Ignora se a tabela não existe, pois será criada logo em seguida
+            pass
         else:
             print(f"Aviso: Erro inesperado ao renomear professores: {e}")
-            # raise e # REMOVIDO
     except Exception as e:
         print(f"Aviso: Erro inesperado ao renomear professores: {e}")
-        # raise e # REMOVIDO
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS professores (
@@ -95,7 +91,7 @@ def inicializar_banco():
     """)
 
     cursor.execute("PRAGMA table_info(professores_old)")
-    if cursor.fetchone(): # Se professores_old existe, copia os dados
+    if cursor.fetchone():
         cursor.execute("""
             INSERT INTO professores (id, nome, telefone, email, especialidade)
             SELECT id, nome, telefone, email, especialidade
