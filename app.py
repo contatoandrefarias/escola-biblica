@@ -1,7 +1,7 @@
 import os
 from datetime import date
 from flask import (Flask, render_template, request,
-                   redirect, url_for, flash, send_file) # Adicionado send_file
+                   redirect, url_for, flash, send_file)
 from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
 from werkzeug.security import generate_password_hash
@@ -19,6 +19,7 @@ from docx import Document
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn # Para definir o idioma do documento Word
+from docx.oxml import OxmlElement # Para corrigir o erro qn()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "escola_biblica_2026")
@@ -590,58 +591,49 @@ def editar_matricula(id):
             else:
                 status = 'reprovado'
 
-        # Se a data de conclusão for preenchida, mas o status ainda é 'cursando',
-        # pode ser um caso onde as notas/frequência ainda não foram suficientes.
-        # Mantemos a lógica acima para determinar o status.
-        if data_con and status == 'cursando':
-            flash("Atenção: Data de conclusão preenchida, mas o status ainda é 'Cursando'. Verifique notas e frequência.", "warning")
-
-
+        # Atualizar a matrícula no banco de dados
         cursor.execute("""
             UPDATE matriculas
-            SET nota1=?,nota2=?,nota_final=?,
-                status=?,data_inicio=?,data_conclusao=?
+            SET nota1=?, nota2=?, nota_final=?, status=?,
+                data_inicio=?, data_conclusao=?
             WHERE id=?
-        """, (nota1,
-              nota2,
-              nota_final,
-              status, # Status agora é calculado automaticamente
-              data_ini or None,
-              data_con or None,
-              id))
+        """, (nota1, nota2, nota_final, status,
+              data_ini or None, data_con or None, id))
         conn.commit()
         conn.close()
         flash("Matricula atualizada!", "sucesso")
         return redirect(url_for("matriculas"))
 
-    # Lógica GET para exibir o formulário
+    # GET request
     cursor.execute("""
         SELECT m.*,
                a.nome as aluno_nome,
                d.nome as disciplina_nome,
                d.nota_minima,
-               d.frequencia_minima
+               d.frequencia_minima,
+               d.id as disciplina_id_original -- Para buscar a frequência
         FROM matriculas m
         JOIN alunos      a ON m.aluno_id      = a.id
         JOIN disciplinas d ON m.disciplina_id = d.id
-        WHERE m.id=?
+        WHERE m.id = ?
     """, (id,))
     mat = cursor.fetchone()
 
-    # Obter dados de frequência para exibir no formulário (apenas para visualização)
     frequencia_percentual = 0.0
     total_aulas = 0
     presencas = 0
-    if mat and mat['disciplina_id']:
+
+    if mat and mat['disciplina_id_original']: # Usar o ID da disciplina da matrícula
         cursor.execute("""
-            SELECT COUNT(id) as total_aulas, SUM(presente) as presencas
-            FROM presencas
-            WHERE matricula_id IN (SELECT id FROM matriculas WHERE disciplina_id = ?)
-        """, (mat['disciplina_id'],))
+            SELECT COUNT(p.id) as total_aulas_reg, SUM(p.presente) as presencas_reg
+            FROM presencas p
+            JOIN matriculas m_sub ON p.matricula_id = m_sub.id
+            WHERE m_sub.disciplina_id = ? AND m_sub.aluno_id = ?
+        """, (mat['disciplina_id_original'], mat['aluno_id'])) # Filtrar por disciplina E aluno
         freq_data = cursor.fetchone()
-        if freq_data and freq_data['total_aulas'] > 0:
-            total_aulas = freq_data['total_aulas']
-            presencas = freq_data['presencas']
+        if freq_data and freq_data['total_aulas_reg'] > 0:
+            total_aulas = freq_data['total_aulas_reg']
+            presencas = freq_data['presencas_reg']
             frequencia_percentual = (presencas / total_aulas) * 100
 
     conn.close()
@@ -777,82 +769,6 @@ def salvar_chamada():
 # ══════════════════════════════════════
 # RELATORIOS
 # ══════════════════════════════════════
-@app.route("/relatorios")
-@login_required
-def relatorios():
-    conn   = conectar()
-    cursor = conn.cursor()
-
-    # Obter parâmetros de filtro da URL
-    disciplina_id = request.args.get("disciplina_id")
-    data_inicio   = request.args.get("data_inicio")
-    data_fim      = request.args.get("data_fim")
-    status_filtro = request.args.get("status_filtro") # 'todos', 'aprovados', 'reprovados', 'cursando'
-
-    query = """
-        SELECT
-            a.nome  as aluno,
-            d.nome  as disciplina,
-            d.nota_minima,
-            d.frequencia_minima,
-            m.nota1, m.nota2, m.nota_final,
-            m.status,
-            m.data_inicio,
-            m.data_conclusao,
-            COUNT(p.id)      as total_aulas,
-            SUM(p.presente)  as presencas,
-            SUM(p.fez_atividade) as atividades
-        FROM matriculas m
-        JOIN alunos      a ON m.aluno_id      = a.id
-        JOIN disciplinas d ON m.disciplina_id = d.id
-        LEFT JOIN presencas p ON p.matricula_id = m.id
-        WHERE 1=1
-    """
-    params = []
-
-    if disciplina_id:
-        query += " AND d.id = ?"
-        params.append(disciplina_id)
-
-    if data_inicio:
-        query += " AND m.data_inicio >= ?"
-        params.append(data_inicio)
-
-    if data_fim:
-        query += " AND m.data_conclusao <= ?"
-        params.append(data_fim)
-
-    if status_filtro and status_filtro != 'todos':
-        query += " AND m.status = ?"
-        params.append(status_filtro)
-
-    query += """
-        GROUP BY m.id
-        ORDER BY a.nome, d.nome
-    """
-
-    cursor.execute(query, tuple(params))
-    dados = cursor.fetchall()
-
-    # Obter todas as disciplinas para o filtro
-    cursor.execute("SELECT id, nome FROM disciplinas ORDER BY nome")
-    disciplinas_filtro = cursor.fetchall()
-
-    conn.close()
-    return render_template("relatorios.html",
-        dados=dados,
-        disciplinas=disciplinas_filtro,
-        # Passar os filtros atuais para manter a seleção no formulário
-        selected_disciplina=disciplina_id,
-        selected_data_inicio=data_inicio,
-        selected_data_fim=data_fim,
-        selected_status=status_filtro)
-
-
-# ══════════════════════════════════════
-# DOWNLOAD DE RELATORIOS
-# ══════════════════════════════════════
-
 def get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro):
     """Função auxiliar para obter os dados do relatório com base nos filtros."""
     conn = conectar()
@@ -868,13 +784,13 @@ def get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro):
             m.status,
             m.data_inicio,
             m.data_conclusao,
-            COUNT(p.id)      as total_aulas,
-            SUM(p.presente)  as presencas,
-            SUM(p.fez_atividade) as atividades
+            -- Contar presenças e total de aulas APENAS para a matrícula específica
+            (SELECT COUNT(p_sub.id) FROM presencas p_sub WHERE p_sub.matricula_id = m.id) as total_aulas,
+            (SELECT SUM(p_sub.presente) FROM presencas p_sub WHERE p_sub.matricula_id = m.id) as presencas,
+            (SELECT SUM(p_sub.fez_atividade) FROM presencas p_sub WHERE p_sub.matricula_id = m.id) as atividades
         FROM matriculas m
         JOIN alunos      a ON m.aluno_id      = a.id
         JOIN disciplinas d ON m.disciplina_id = d.id
-        LEFT JOIN presencas p ON p.matricula_id = m.id
         WHERE 1=1
     """
     params = []
@@ -896,7 +812,6 @@ def get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro):
         params.append(status_filtro)
 
     query += """
-        GROUP BY m.id
         ORDER BY a.nome, d.nome
     """
 
@@ -904,6 +819,34 @@ def get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro):
     dados = cursor.fetchall()
     conn.close()
     return dados
+
+@app.route("/relatorios")
+@login_required
+def relatorios():
+    # Obter parâmetros de filtro da URL
+    disciplina_id = request.args.get("disciplina_id")
+    data_inicio   = request.args.get("data_inicio")
+    data_fim      = request.args.get("data_fim")
+    status_filtro = request.args.get("status_filtro")
+
+    dados = get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro)
+
+    conn = conectar()
+    cursor = conn.cursor()
+    # Obter todas as disciplinas para o filtro
+    cursor.execute("SELECT id, nome FROM disciplinas ORDER BY nome")
+    disciplinas_filtro = cursor.fetchall()
+    conn.close()
+
+    return render_template("relatorios.html",
+        dados=dados,
+        disciplinas=disciplinas_filtro,
+        # Passar os filtros atuais para manter a seleção no formulário
+        selected_disciplina=disciplina_id,
+        selected_data_inicio=data_inicio,
+        selected_data_fim=data_fim,
+        selected_status=status_filtro)
+
 
 @app.route("/relatorios/download/pdf")
 @login_required
@@ -957,7 +900,7 @@ def download_relatorio_pdf():
 
         for item in dados:
             freq_val = "—"
-            if item['total_aulas'] and item['total_aulas'] > 0:
+            if item['total_aulas'] is not None and item['total_aulas'] > 0: # Corrigido para verificar None
                 freq = ((item['presencas'] or 0) / item['total_aulas'] * 100)
                 freq_val = f"{freq:.1f}% ({item['presencas'] or 0}/{item['total_aulas']})"
 
@@ -998,7 +941,7 @@ def download_relatorio_pdf():
     else:
         elements.append(Paragraph("Nenhum relatório encontrado com os filtros aplicados.", styles['Normal']))
 
-    doc.build(buffer)
+    doc.build(buffer, story=elements) # Passar 'elements' para story
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name="relatorio_matriculas.pdf", mimetype="application/pdf")
 
@@ -1014,9 +957,9 @@ def download_relatorio_doc():
     dados = get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro)
 
     document = Document()
-    # Definir idioma para português
+    # Definir idioma para português (forma correta)
     document.settings.element.xpath('//w:settings')[0].append(
-        qn('w:lang', val='pt-BR')
+        OxmlElement('w:lang', {'w:val': 'pt-BR'})
     )
 
     # Título
@@ -1064,7 +1007,7 @@ def download_relatorio_doc():
             row_cells = table.add_row().cells
 
             freq_val = "—"
-            if item['total_aulas'] and item['total_aulas'] > 0:
+            if item['total_aulas'] is not None and item['total_aulas'] > 0: # Corrigido para verificar None
                 freq = ((item['presencas'] or 0) / item['total_aulas'] * 100)
                 freq_val = f"{freq:.1f}% ({item['presencas'] or 0}/{item['total_aulas']})"
 
