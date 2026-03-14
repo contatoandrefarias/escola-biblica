@@ -2,159 +2,82 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">📝 Notas e Matrículas</h4>
-    <a href="/" class="btn btn-outline-secondary">← Voltar ao Dashboard</a>
-</div>
-
-<!-- Formulário de Filtros -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header fw-semibold">
-        Filtrar Matrículas
-    </div>
-    <div class="card-body">
-        <form id="filterForm" action="/matriculas" method="GET" class="row g-3 align-items-end">
-            <div class="col-md-5">
-                <label for="turma_id" class="form-label small text-muted">Turma</label>
-                <select name="turma_id" id="turma_id" class="form-select">
-                    <option value="">Todas as Turmas</option>
-                    {% for turma in turmas %}
-                    <option value="{{ turma['id'] }}"
-                        {% if selected_turma == turma['id'] %}selected{% endif %}>
-                        {{ turma['nome'] }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-5">
-                <label for="disciplina_id" class="form-label small text-muted">Disciplina</label>
-                <select name="disciplina_id" id="disciplina_id" class="form-select">
-                    <option value="">Todas as Disciplinas</option>
-                    {% for disc in disciplinas %}
-                    <option value="{{ disc['id'] }}"
-                        {% if selected_disciplina == disc['id'] %}selected{% endif %}>
-                        {{ disc['nome'] }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-funnel-fill"></i>
-                </button>
-                <a href="/matriculas" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle-fill"></i>
-                </a>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Tabela de Matrículas -->
-<div class="card shadow-sm">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Lista de Matrículas</h5>
-        <a href="/matriculas/nova" class="btn btn-success btn-sm">
-            <i class="bi bi-plus-circle me-2"></i> Matricular Turma em Disciplina
+    <h4 class="fw-bold mb-0">📚 Matrículas</h4>
+    <div class="d-flex gap-2">
+        <a href="/matriculas/nova" class="btn btn-success">
+            <i class="bi bi-plus-circle-fill me-2"></i> Matricular Turma em Disciplina
+        </a>
+        <a href="/matriculas/novo_aluno_disciplina" class="btn btn-primary">
+            <i class="bi bi-person-plus-fill me-2"></i> Matricular Aluno em Disciplina
         </a>
     </div>
+</div>
+
+<div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
                 <thead class="table-dark">
                     <tr>
                         <th>Aluno</th>
-                        <th>Turma</th>
                         <th>Disciplina</th>
-                        <th class="text-center">N1</th>
-                        <th class="text-center">N2</th>
-                        <th class="text-center">Final</th>
-                        <th class="text-center">Status</th>
+                        <th class="text-center">Turma</th>
                         <th class="text-center">Início</th>
                         <th class="text-center">Conclusão</th>
+                        <th class="text-center">Status</th>
                         <th class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if matriculas %}
-                    {% for m in matriculas %}
+                    {% for matricula in matriculas %}
                     <tr>
-                        <td class="fw-semibold">{{ m['aluno_nome'] }}</td>
-                        <td>{{ m['turma_nome'] or 'N/A' }}</td>
-                        <td>{{ m['disciplina_nome'] }}</td>
+                        <td>{{ matricula['aluno_nome'] }}</td>
+                        <td>{{ matricula['disciplina_nome'] }}</td>
                         <td class="text-center">
-                            {% if m['nota1'] is not none %}
-                                {{ m['nota1']|round(1) }}
+                            {% if matricula['turma_nome'] %}
+                                {{ matricula['turma_nome'] }} ({{ matricula['faixa_etaria']|replace('_', ' ')|title }})
                             {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="text-muted">N/A</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if m['nota2'] is not none %}
-                                {{ m['nota2']|round(1) }}
+                            {% if matricula['data_inicio'] %}
+                                {{ matricula['data_inicio']|replace('-', '/') }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if matricula['data_conclusao'] %}
+                                {{ matricula['data_conclusao']|replace('-', '/') }}
                             {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="text-warning">Em andamento</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if m['nota_final'] is not none %}
-                                <span class="fw-bold
-                                    {% if m['status'] == 'aprovado' %}text-success
-                                    {% elif m['status'] == 'reprovado' %}text-danger
-                                    {% else %}text-primary{% endif %}">
-                                    {{ m['nota_final']|round(1) }}
-                                </span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            {% if m['status'] == 'aprovado' %}
+                            {% if matricula['status'] == 'aprovado' %}
                                 <span class="badge bg-success">✅ Aprovado</span>
-                            {% elif m['status'] == 'reprovado' %}
+                            {% elif matricula['status'] == 'reprovado' %}
                                 <span class="badge bg-danger">❌ Reprovado</span>
                             {% else %}
                                 <span class="badge bg-primary">📖 Cursando</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if m['data_inicio'] %}
-                                {{ m['data_inicio']|replace('-', '/') }}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            {% if m['data_conclusao'] %}
-                                {{ m['data_conclusao']|replace('-', '/') }}
-                            {% else %}
-                                <span class="text-warning">Em andamento</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            <div class="d-flex gap-2 justify-content-center">
-                                <a href="/matriculas/{{ m['matricula_id'] }}/editar"
-                                   class="btn btn-sm btn-warning" title="Editar">
-                                    <i class="bi bi-pencil-fill"></i>
-                                </a>
-                                <form action="/matriculas/{{ m['matricula_id'] }}/excluir"
-                                      method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta matrícula?');">
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
-                                        <i class="bi bi-trash-fill"></i>
-                                    </button>
-                                </form>
-                            </div>
+                            <a href="/matriculas/{{ matricula['id'] }}/editar" class="btn btn-sm btn-primary" title="Editar Matrícula">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <a href="/matriculas/{{ matricula['id'] }}/excluir" class="btn btn-sm btn-danger" title="Excluir Matrícula"
+                               onclick="return confirm('Tem certeza que deseja excluir a matrícula de {{ matricula['aluno_nome'] }} na disciplina {{ matricula['disciplina_nome'] }}?');">
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
-                            <div class="fs-1 mb-2">📭</div>
-                            Nenhuma matrícula encontrada com os filtros aplicados.
-                            <br>
-                            <a href="/matriculas/nova" class="btn btn-success mt-3">
-                                <i class="bi bi-plus-circle me-2"></i> Matricular Turma em Disciplina
-                            </a>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <div class="fs-1 mb-2">🤷‍♂️</div>
+                            Nenhuma matrícula encontrada.
                         </td>
                     </tr>
                     {% endif %}
@@ -163,7 +86,7 @@
         </div>
     </div>
     <div class="card-footer text-muted small">
-        Total de matrículas: {{ matriculas|length }}
+        Total de registros: {{ matriculas|length }}
     </div>
 </div>
 
