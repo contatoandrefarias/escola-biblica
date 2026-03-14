@@ -34,19 +34,42 @@ def inicializar_banco():
         )
     """)
 
-    # Tabela de Alunos
+    # --- INÍCIO DA MODIFICAÇÃO PARA ALUNOS ---
+    # 1. Renomear a tabela alunos existente (se houver)
+    try:
+        cursor.execute("ALTER TABLE alunos RENAME TO alunos_old")
+    except sqlite3.OperationalError as e:
+        # Se a tabela não existir ou já tiver sido renomeada, ignora
+        if "no such table" not in str(e) and "already exists" not in str(e):
+            raise e # Re-lança outros erros inesperados
+
+    # 2. Criar a nova tabela de Alunos SEM a restrição UNIQUE no email
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
             telefone TEXT,
-            email TEXT UNIQUE,
+            email TEXT, -- Removido UNIQUE
             data_nascimento TEXT,
             membro_igreja INTEGER DEFAULT 0,
             turma_id INTEGER,
             FOREIGN KEY (turma_id) REFERENCES turmas(id)
         )
     """)
+
+    # 3. Copiar os dados da tabela antiga para a nova
+    # Verifica se a tabela antiga existe e tem dados
+    cursor.execute("PRAGMA table_info(alunos_old)")
+    if cursor.fetchone(): # Se alunos_old existe
+        cursor.execute("""
+            INSERT INTO alunos (id, nome, telefone, email, data_nascimento, membro_igreja, turma_id)
+            SELECT id, nome, telefone, email, data_nascimento, membro_igreja, turma_id
+            FROM alunos_old
+        """)
+        # 4. Excluir a tabela antiga
+        cursor.execute("DROP TABLE alunos_old")
+    # --- FIM DA MODIFICAÇÃO PARA ALUNOS ---
+
 
     # Tabela de Professores
     cursor.execute("""
