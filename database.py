@@ -38,10 +38,14 @@ def inicializar_banco():
     try:
         cursor.execute("ALTER TABLE alunos RENAME TO alunos_old")
     except sqlite3.OperationalError as e:
-        if "no such table" not in str(e) and "already exists" not in str(e):
-            pass
+        if "no such table" in str(e):
+            pass # Ignora se a tabela não existe, pois será criada logo em seguida
         else:
-            raise e
+            print(f"Aviso: Erro inesperado ao renomear alunos: {e}") # Imprime o erro mas não trava
+            # raise e # REMOVIDO: Não re-lançar o erro para permitir a inicialização
+    except Exception as e:
+        print(f"Aviso: Erro inesperado ao renomear alunos: {e}")
+        # raise e # REMOVIDO
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alunos (
@@ -57,7 +61,7 @@ def inicializar_banco():
     """)
 
     cursor.execute("PRAGMA table_info(alunos_old)")
-    if cursor.fetchone():
+    if cursor.fetchone(): # Se alunos_old existe, copia os dados
         cursor.execute("""
             INSERT INTO alunos (id, nome, telefone, email, data_nascimento, membro_igreja, turma_id)
             SELECT id, nome, telefone, email, data_nascimento, membro_igreja, turma_id
@@ -71,10 +75,14 @@ def inicializar_banco():
     try:
         cursor.execute("ALTER TABLE professores RENAME TO professores_old")
     except sqlite3.OperationalError as e:
-        if "no such table" not in str(e) and "already exists" not in str(e):
-            pass
+        if "no such table" in str(e):
+            pass # Ignora se a tabela não existe, pois será criada logo em seguida
         else:
-            raise e
+            print(f"Aviso: Erro inesperado ao renomear professores: {e}")
+            # raise e # REMOVIDO
+    except Exception as e:
+        print(f"Aviso: Erro inesperado ao renomear professores: {e}")
+        # raise e # REMOVIDO
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS professores (
@@ -87,7 +95,7 @@ def inicializar_banco():
     """)
 
     cursor.execute("PRAGMA table_info(professores_old)")
-    if cursor.fetchone():
+    if cursor.fetchone(): # Se professores_old existe, copia os dados
         cursor.execute("""
             INSERT INTO professores (id, nome, telefone, email, especialidade)
             SELECT id, nome, telefone, email, especialidade
