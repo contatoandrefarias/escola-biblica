@@ -42,7 +42,6 @@
 <div class="card shadow-sm">
     <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
         Chamada para {{ disciplinas | selectattr('id', '==', selected_disciplina) | map(attribute='nome') | first }} em {{ selected_data_aula|replace('-', '/') }}
-        {# Removido o badge de faixa etária da disciplina, conforme solicitado #}
     </div>
     <div class="card-body p-0">
         <form action="/presenca/chamada" method="POST">
@@ -61,7 +60,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% if alunos_chamada %}
+                        {% if alunos_chamada %} {# Verifica se a lista de alunos não está vazia #}
                         {% for aluno in alunos_chamada %}
                         <tr>
                             <td>{{ aluno['aluno_nome'] }}</td>
@@ -94,7 +93,7 @@
                             {% endif %}
                         </tr>
                         {% endfor %}
-                        {% else %}
+                        {% else %} {# Se a lista de alunos estiver vazia #}
                         <tr>
                             <td colspan="{% if tem_atividades %}4{% else %}3{% endif %}"
                                 class="text-center py-5 text-muted">
@@ -114,7 +113,7 @@
         </form>
     </div>
 </div>
-{% elif selected_disciplina and alunos_chamada is none %}
+{% elif selected_disciplina and alunos_chamada is none %} {# Este bloco não deve ser mais alcançado se alunos_chamada for sempre uma lista #}
 <div class="alert alert-warning text-center" role="alert">
     <h4 class="alert-heading">Disciplina não encontrada ou inativa!</h4>
     <p>Por favor, selecione uma disciplina válida e ativa para fazer a chamada.</p>
