@@ -512,23 +512,20 @@ def nova_matricula():
                 INSERT INTO matriculas
                     (aluno_id,disciplina_id,data_inicio,nota1,nota2)
                 VALUES (?,?,?,?,?)
-            """, (aluno_id, disc_id, data_ini or None,
-                  float(nota1) if nota1 else None,
-                  float(nota2) if nota2 else None))
+            """, (aluno_id, disc_id, data_ini, nota1, nota2))
             conn.commit()
-            flash("Matricula criada!", "sucesso")
-        except Exception:
+            flash("Matricula criada com sucesso!", "sucesso")
+        except sqlite3.IntegrityError:
             flash("Aluno ja matriculado nesta disciplina!", "erro")
         conn.close()
         return redirect(url_for("matriculas"))
     cursor.execute("SELECT id,nome FROM alunos ORDER BY nome")
     alunos_lista = cursor.fetchall()
-    cursor.execute(
-        "SELECT id,nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
-    discs_lista = cursor.fetchall()
+    cursor.execute("SELECT id,nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
+    disciplinas_lista = cursor.fetchall()
     conn.close()
     return render_template("nova_matricula.html",
-        alunos=alunos_lista, disciplinas=discs_lista)
+        alunos=alunos_lista, disciplinas=disciplinas_lista)
 
 
 @app.route("/matriculas/<int:id>/editar", methods=["GET", "POST"])
@@ -537,71 +534,77 @@ def editar_matricula(id):
     conn   = conectar()
     cursor = conn.cursor()
     if request.method == "POST":
-        nota1_str      = request.form.get("nota1")
-        nota2_str      = request.form.get("nota2")
-        nota_final_str = request.form.get("nota_final") # Pode ser sobrescrito
-        data_ini       = request.form.get("data_inicio", "").strip()
-        data_con       = request.form.get("data_conclusao", "").strip()
+        nota1_str        = request.form.get("nota1")
+        nota2_str        = request.form.get("nota2")
+        nota_final_str   = request.form.get("nota_final")
+        data_inicio      = request.form.get("data_inicio", "").strip()
+        data_conclusao   = request.form.get("data_conclusao", "").strip()
 
         nota1 = float(nota1_str) if nota1_str else None
         nota2 = float(nota2_str) if nota2_str else None
+        nota_final = float(nota_final_str) if nota_final_str else None
 
-        # Obter nota_minima e frequencia_minima da disciplina
+        # Obter dados da matrícula e disciplina para cálculos
         cursor.execute("""
-            SELECT d.nota_minima, d.frequencia_minima, m.disciplina_id
+            SELECT m.aluno_id, m.disciplina_id, d.nota_minima, d.frequencia_minima
             FROM matriculas m
             JOIN disciplinas d ON m.disciplina_id = d.id
             WHERE m.id = ?
         """, (id,))
-        matricula_info = cursor.fetchone()
+        mat_disc_data = cursor.fetchone()
+        if not mat_disc_data:
+            flash("Matrícula ou disciplina não encontrada!", "erro")
+            conn.close()
+            return redirect(url_for("matriculas"))
 
-        nota_minima = matricula_info['nota_minima'] if matricula_info else 6.0
-        frequencia_minima = matricula_info['frequencia_minima'] if matricula_info else 75.0
-        disciplina_id_mat = matricula_info['disciplina_id'] if matricula_info else None
+        disciplina_id     = mat_disc_data['disciplina_id']
+        aluno_id          = mat_disc_data['aluno_id']
+        nota_minima       = mat_disc_data['nota_minima']
+        frequencia_minima = mat_disc_data['frequencia_minima']
 
-        # 1. Calcular Nota Final (se N1 e N2 existirem e não houver sobrescrita manual)
-        nota_final = None
-        if nota_final_str: # Se o usuário preencheu manualmente a nota final
-            try:
-                nota_final = float(nota_final_str)
-            except ValueError:
-                nota_final = None
-        elif nota1 is not None and nota2 is not None: # Se não preencheu, calcula
+        # 1. Calcular Nota Final (se não sobrescrita)
+        if nota_final is None and nota1 is not None and nota2 is not None:
             nota_final = (nota1 + nota2) / 2
 
-        # 2. Calcular Frequência (se houver aulas registradas)
+        # 2. Calcular Frequência
+        cursor.execute("""
+            SELECT COUNT(id) as total_aulas, SUM(presente) as presencas
+            FROM presencas
+            WHERE matricula_id = ?
+        """, (id,))
+        freq_data = cursor.fetchone()
+        total_aulas = freq_data['total_aulas'] or 0
+        presencas   = freq_data['presencas'] or 0
+
         frequencia_percentual = 0.0
-        if disciplina_id_mat:
-            cursor.execute("""
-                SELECT COUNT(id) as total_aulas, SUM(presente) as presencas
-                FROM presencas
-                WHERE matricula_id IN (SELECT id FROM matriculas WHERE disciplina_id = ?)
-            """, (disciplina_id_mat,))
-            freq_data = cursor.fetchone()
-            if freq_data and freq_data['total_aulas'] > 0:
-                total_aulas_registradas = freq_data['total_aulas']
-                presencas_registradas = freq_data['presencas']
-                frequencia_percentual = (presencas_registradas / total_aulas_registradas) * 100
+        if total_aulas > 0:
+            frequencia_percentual = (presencas / total_aulas) * 100
 
-        # 3. Determinar Status (Aprovado/Reprovado/Cursando)
-        status = 'cursando' # Default
-        if nota_final is not None and frequencia_percentual is not None:
-            if nota_final >= nota_minima and frequencia_percentual >= frequencia_minima:
-                status = 'aprovado'
+        # 3. Determinar Status
+        status = "cursando"
+        if data_conclusao: # Se a data de conclusão foi preenchida, tentamos determinar o status final
+            if nota_final is not None and frequencia_percentual is not None:
+                if nota_final >= nota_minima and frequencia_percentual >= frequencia_minima:
+                    status = "aprovado"
+                else:
+                    status = "reprovado"
             else:
-                status = 'reprovado'
+                # Se não há nota final ou frequência, mas há data de conclusão,
+                # podemos considerar como reprovado ou exigir preenchimento.
+                # Por enquanto, vamos deixar como 'cursando' e alertar.
+                flash("Data de conclusão preenchida, mas notas ou frequência insuficientes para determinar status final.", "warning")
 
-        # Atualizar a matrícula no banco de dados
+        # Atualizar matrícula
         cursor.execute("""
             UPDATE matriculas
             SET nota1=?, nota2=?, nota_final=?, status=?,
                 data_inicio=?, data_conclusao=?
             WHERE id=?
         """, (nota1, nota2, nota_final, status,
-              data_ini or None, data_con or None, id))
+              data_inicio, data_conclusao, id))
         conn.commit()
         conn.close()
-        flash("Matricula atualizada!", "sucesso")
+        flash("Matrícula atualizada com sucesso!", "sucesso")
         return redirect(url_for("matriculas"))
 
     # GET request
@@ -610,77 +613,68 @@ def editar_matricula(id):
                a.nome as aluno_nome,
                d.nome as disciplina_nome,
                d.nota_minima,
-               d.frequencia_minima,
-               d.id as disciplina_id_original -- Para buscar a frequência
+               d.frequencia_minima
         FROM matriculas m
         JOIN alunos      a ON m.aluno_id      = a.id
         JOIN disciplinas d ON m.disciplina_id = d.id
         WHERE m.id = ?
     """, (id,))
-    mat = cursor.fetchone()
+    matricula = cursor.fetchone()
+    if not matricula:
+        flash("Matrícula não encontrada!", "erro")
+        conn.close()
+        return redirect(url_for("matriculas"))
+
+    # Calcular frequência para exibição
+    cursor.execute("""
+        SELECT COUNT(id) as total_aulas, SUM(presente) as presencas
+        FROM presencas
+        WHERE matricula_id = ?
+    """, (id,))
+    freq_data = cursor.fetchone()
+    total_aulas = freq_data['total_aulas'] or 0
+    presencas   = freq_data['presencas'] or 0
 
     frequencia_percentual = 0.0
-    total_aulas = 0
-    presencas = 0
-
-    if mat and mat['disciplina_id_original']: # Usar o ID da disciplina da matrícula
-        cursor.execute("""
-            SELECT COUNT(p.id) as total_aulas_reg, SUM(p.presente) as presencas_reg
-            FROM presencas p
-            JOIN matriculas m_sub ON p.matricula_id = m_sub.id
-            WHERE m_sub.disciplina_id = ? AND m_sub.aluno_id = ?
-        """, (mat['disciplina_id_original'], mat['aluno_id'])) # Filtrar por disciplina E aluno
-        freq_data = cursor.fetchone()
-        if freq_data and freq_data['total_aulas_reg'] > 0:
-            total_aulas = freq_data['total_aulas_reg']
-            presencas = freq_data['presencas_reg']
-            frequencia_percentual = (presencas / total_aulas) * 100
+    if total_aulas > 0:
+        frequencia_percentual = (presencas / total_aulas) * 100
 
     conn.close()
-    if not mat:
-        flash("Matricula nao encontrada!", "erro")
-        return redirect(url_for("matriculas"))
     return render_template("editar_matricula.html",
-        matricula=mat,
-        frequencia_percentual=frequencia_percentual,
+        matricula=matricula,
         total_aulas=total_aulas,
-        presencas=presencas)
+        presencas=presencas,
+        frequencia_percentual=frequencia_percentual)
 
 
-# ══════════════════════════════════════
-# PRESENCA / CHAMADA
-# ══════════════════════════════════════
 @app.route("/presenca")
 @login_required
 def presenca():
-    conn   = conectar()
+    conn = conectar()
     cursor = conn.cursor()
 
-    todas_disciplinas = []
     disciplinas_cursando = []
     disciplinas_concluidas = []
 
-    # Se o current_user for um aluno, filtramos pelas suas matrículas
     if current_user.is_aluno and current_user.aluno_id:
-        aluno_id = current_user.aluno_id
+        # Para alunos, buscar disciplinas matriculadas e classificá-las
         cursor.execute("""
             SELECT d.id, d.nome, m.status
-            FROM disciplinas d
-            JOIN matriculas m ON d.id = m.disciplina_id
-            WHERE m.aluno_id = ? AND d.ativa = 1
+            FROM matriculas m
+            JOIN disciplinas d ON m.disciplina_id = d.id
+            WHERE m.aluno_id = ?
             ORDER BY d.nome
-        """, (aluno_id,))
-        disciplinas_do_aluno = cursor.fetchall()
+        """, (current_user.aluno_id,))
+        aluno_disciplinas = cursor.fetchall()
 
-        for disc in disciplinas_do_aluno:
+        for disc in aluno_disciplinas:
             if disc['status'] == 'cursando':
-                disciplinas_cursando.append({'id': disc['id'], 'nome': disc['nome']})
-            elif disc['status'] in ['aprovado', 'reprovado']:
-                disciplinas_concluidas.append({'id': disc['id'], 'nome': disc['nome']})
-    else: # Para administradores ou professores, listamos todas as disciplinas ativas
-          # como "cursando" para fins de chamada.
-        cursor.execute(
-            "SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
+                disciplinas_cursando.append(disc)
+            else:
+                disciplinas_concluidas.append(disc)
+    else:
+        # Para admin/professores, listar todas as disciplinas ativas como "cursando"
+        cursor.execute("SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
         disciplinas_cursando = cursor.fetchall()
         # Para admin/professores, não há uma lógica simples para "disciplinas concluídas"
         # sem um contexto de aluno específico. Elas aparecerão apenas como "cursando"
@@ -900,7 +894,7 @@ def download_relatorio_pdf():
 
         for item in dados:
             freq_val = "—"
-            if item['total_aulas'] is not None and item['total_aulas'] > 0: # Corrigido para verificar None
+            if item['total_aulas'] is not None and item['total_aulas'] > 0:
                 freq = ((item['presencas'] or 0) / item['total_aulas'] * 100)
                 freq_val = f"{freq:.1f}% ({item['presencas'] or 0}/{item['total_aulas']})"
 
@@ -941,7 +935,7 @@ def download_relatorio_pdf():
     else:
         elements.append(Paragraph("Nenhum relatório encontrado com os filtros aplicados.", styles['Normal']))
 
-    doc.build(buffer, story=elements) # Passar 'elements' para story
+    doc.build(elements) # CORREÇÃO: Remover 'story='
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name="relatorio_matriculas.pdf", mimetype="application/pdf")
 
@@ -957,9 +951,10 @@ def download_relatorio_doc():
     dados = get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro)
 
     document = Document()
-    # Definir idioma para português (forma correta)
+    # Definir idioma para português (forma correta para python-docx)
+    # CORREÇÃO: Usar 'val' sem o prefixo 'w:'
     document.settings.element.xpath('//w:settings')[0].append(
-        OxmlElement('w:lang', {'w:val': 'pt-BR'})
+        OxmlElement('w:lang', {'val': 'pt-BR'})
     )
 
     # Título
@@ -1007,7 +1002,7 @@ def download_relatorio_doc():
             row_cells = table.add_row().cells
 
             freq_val = "—"
-            if item['total_aulas'] is not None and item['total_aulas'] > 0: # Corrigido para verificar None
+            if item['total_aulas'] is not None and item['total_aulas'] > 0:
                 freq = ((item['presencas'] or 0) / item['total_aulas'] * 100)
                 freq_val = f"{freq:.1f}% ({item['presencas'] or 0}/{item['total_aulas']})"
 
