@@ -22,16 +22,38 @@
             <div class="mb-3">
                 <label for="faixa_etaria" class="form-label fw-semibold">Faixa Etária</label>
                 <select name="faixa_etaria" id="faixa_etaria" class="form-select" required>
-                    <option value="">— Selecione a Faixa Etária —</option>
-                    <option value="criancas" {% if request.form.get('faixa_etaria') == 'criancas' %}selected{% endif %}>Crianças</option>
-                    <option value="adolescentes_jovens" {% if request.form.get('faixa_etaria') == 'adolescentes_jovens' %}selected{% endif %}>Adolescentes e Jovens</option>
-                    <option value="adultos" {% if request.form.get('faixa_etaria') == 'adultos' %}selected{% endif %}>Adultos</option>
+                    <option value="" data-description="Selecione a faixa etária para definir a lógica de avaliação.">
+                        — Selecione a Faixa Etária —
+                    </option>
+                    <option value="criancas"
+                            data-description="Não há notas. Status baseado apenas na frequência. (Ex: 0-10 anos)"
+                            {% if request.form.get('faixa_etaria') == 'criancas' %}selected{% endif %}>
+                        Crianças
+                    </option>
+                    <option value="adolescentes_jovens"
+                            data-description="Uma nota (N1) composta por Participação (1), Desafio (1) e Prova (8). Status baseado em N1 e frequência. (Ex: 11-17 anos)"
+                            {% if request.form.get('faixa_etaria') == 'adolescentes_jovens' %}selected{% endif %}>
+                        Adolescentes e Jovens
+                    </option>
+                    <option value="adultos"
+                            data-description="Duas notas (N1 e N2). Média final de N1 e N2. Status baseado na média e frequência. (Ex: 18+ anos)"
+                            {% if request.form.get('faixa_etaria') == 'adultos' %}selected{% endif %}>
+                        Adultos
+                    </option>
                 </select>
+                <div id="faixa_etaria_description" class="form-text mt-2">
+                    Selecione a faixa etária para definir a lógica de avaliação.
+                </div>
+            </div>
+
+            <div class="mb-3 form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="ativa" name="ativa" checked>
+                <label class="form-check-label" for="ativa">Turma Ativa</label>
             </div>
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-success px-4">
-                    <i class="bi bi-save-fill me-2"></i> Salvar Turma
+                    <i class="bi bi-plus-circle-fill me-2"></i> Criar Turma
                 </button>
                 <a href="/turmas" class="btn btn-outline-secondary">
                     Cancelar
@@ -40,5 +62,23 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectElement = document.getElementById('faixa_etaria');
+        const descriptionDiv = document.getElementById('faixa_etaria_description');
+
+        function updateDescription() {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            descriptionDiv.textContent = selectedOption.dataset.description || '';
+        }
+
+        // Atualiza a descrição na carga inicial da página
+        updateDescription();
+
+        // Atualiza a descrição quando a seleção muda
+        selectElement.addEventListener('change', updateDescription);
+    });
+</script>
 
 {% endblock %}
