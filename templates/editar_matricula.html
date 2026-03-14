@@ -51,21 +51,23 @@
             </div>
 
             <div class="mb-3">
+                <label class="form-label fw-semibold">Frequência</label>
+                <input type="text" class="form-control" readonly
+                       value="{% if total_aulas > 0 %}{{ frequencia_percentual|round(1) }}% ({{ presencas }}/{{ total_aulas }} aulas){% else %}Sem aulas registradas{% endif %}">
+                <div class="form-text">
+                    Mínima exigida: {{ matricula['frequencia_minima']|round(1) }}%
+                </div>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label fw-semibold">Status</label>
-                <select name="status" class="form-select">
-                    <option value="cursando"
-                        {% if matricula['status'] == 'cursando' %}selected{% endif %}>
-                        📖 Cursando
-                    </option>
-                    <option value="aprovado"
-                        {% if matricula['status'] == 'aprovado' %}selected{% endif %}>
-                        ✅ Aprovado
-                    </option>
-                    <option value="reprovado"
-                        {% if matricula['status'] == 'reprovado' %}selected{% endif %}>
-                        ❌ Reprovado
-                    </option>
-                </select>
+                <input type="text" name="status" class="form-control" readonly
+                       value="{% if matricula['status'] == 'aprovado' %}✅ Aprovado
+                              {% elif matricula['status'] == 'reprovado' %}❌ Reprovado
+                              {% else %}📖 Cursando{% endif %}">
+                <div class="form-text">
+                    Status é calculado automaticamente com base nas notas e frequência.
+                </div>
             </div>
 
             <div class="row g-3 mb-4">
