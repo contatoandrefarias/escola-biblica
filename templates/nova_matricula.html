@@ -10,58 +10,43 @@
     <div class="card-body">
         <form method="POST">
             <div class="mb-3">
-                <label for="turma_id" class="form-label fw-semibold">
-                    🏫 Selecionar Turma
-                </label>
-                <select name="turma_id" id="turma_id" class="form-select" required>
-                    <option value="">— Escolha uma turma —</option>
+                <label for="turma_id" class="form-label fw-semibold">Turma</label>
+                <select name="aluno_id" id="turma_id" class="form-select" required> {# Note: name="aluno_id" é usado para enviar o ID da turma #}
+                    <option value="">— Selecione a Turma —</option>
                     {% for turma in turmas %}
                     <option value="{{ turma['id'] }}"
-                        {% if selected_turma == turma['id'] %}selected{% endif %}>
-                        {{ turma['nome'] }}
+                            {% if request.form.get('aluno_id')|int == turma['id'] %}selected{% endif %}>
+                        {{ turma['nome'] }} ({{ turma['faixa_etaria']|replace('_', ' ')|title }})
                     </option>
                     {% endfor %}
                 </select>
                 <div class="form-text">
-                    Todos os alunos desta turma serão matriculados na disciplina.
+                    Selecione a turma para matricular todos os seus alunos na disciplina.
                 </div>
             </div>
 
             <div class="mb-3">
-                <label for="disciplina_id" class="form-label fw-semibold">
-                    📚 Selecionar Disciplina
-                </label>
+                <label for="disciplina_id" class="form-label fw-semibold">Disciplina</label>
                 <select name="disciplina_id" id="disciplina_id" class="form-select" required>
-                    <option value="">— Escolha uma disciplina —</option>
-                    {% for disc in disciplinas %}
-                    <option value="{{ disc['id'] }}"
-                        {% if selected_disciplina == disc['id'] %}selected{% endif %}>
-                        {{ disc['nome'] }}
+                    <option value="">— Selecione a Disciplina —</option>
+                    {% for disciplina in disciplinas %}
+                    <option value="{{ disciplina['id'] }}"
+                            {% if request.form.get('disciplina_id')|int == disciplina['id'] %}selected{% endif %}>
+                        {{ disciplina['nome'] }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <label for="data_inicio" class="form-label fw-semibold">
-                        🗓️ Data de Início
-                    </label>
-                    <input type="date" name="data_inicio" id="data_inicio"
-                           class="form-control" value="{{ data_inicio or hoje }}" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="data_conclusao" class="form-label fw-semibold">
-                        🏁 Data de Conclusão (Opcional)
-                    </label>
-                    <input type="date" name="data_conclusao" id="data_conclusao"
-                           class="form-control" value="{{ data_conclusao or '' }}">
-                </div>
+            <div class="mb-3">
+                <label for="data_inicio" class="form-label fw-semibold">Data de Início</label>
+                <input type="date" name="data_inicio" id="data_inicio" class="form-control"
+                       value="{{ request.form.get('data_inicio', now.strftime('%Y-%m-%d')) }}" required>
             </div>
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-success px-4">
-                    <i class="bi bi-person-plus-fill me-2"></i> Matricular Turma
+                    <i class="bi bi-plus-circle-fill me-2"></i> Matricular Turma
                 </button>
                 <a href="/matriculas" class="btn btn-outline-secondary">
                     Cancelar
