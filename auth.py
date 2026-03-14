@@ -1,85 +1,60 @@
-# ================================================
-# auth.py
-# Gerenciamento de autenticação e usuários
-# ================================================
+from werkzeug.security import check_password_hash
 from flask_login import UserMixin
 from database import conectar
-from werkzeug.security import check_password_hash
-
 
 class Usuario(UserMixin):
-    """
-    Classe que representa um usuário logado.
-    UserMixin fornece métodos padrão do Flask-Login:
-    is_authenticated, is_active, get_id()
-    """
-    def __init__(self, id, nome, email, perfil, ativo):
-        self.id    = id
-        self.nome  = nome
+    def __init__(self, id, nome, email, senha_hash, perfil):
+        self.id = id
+        self.nome = nome
         self.email = email
+        self.senha_hash = senha_hash
         self.perfil = perfil
-        self.ativo  = ativo
 
     def get_id(self):
         return str(self.id)
 
     @property
     def is_admin(self):
-        """Verifica se é administrador."""
         return self.perfil == "admin"
 
     @property
-    def is_active(self):
-        """Usuário ativo pode fazer login."""
-        return bool(self.ativo)
+    def is_aluno(self):
+        return self.perfil == "aluno"
+
+    @property
+    def aluno_id(self):
+        """Retorna o ID do aluno se o perfil for 'aluno', caso contrário None."""
+        if self.is_aluno:
+            conn = conectar()
+            cursor = conn.cursor()
+            # Assumindo que o email do usuário é o mesmo do aluno
+            cursor.execute("SELECT id FROM alunos WHERE email = ?", (self.email,))
+            aluno = cursor.fetchone()
+            conn.close()
+            return aluno['id'] if aluno else None
+        return None
 
 
 def carregar_usuario(user_id):
-    """
-    Carrega usuário pelo ID.
-    Chamado automaticamente pelo Flask-Login
-    a cada requisição.
-    """
-    conn   = conectar()
+    conn = conectar()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM usuarios WHERE id = ?",
-        (int(user_id),)
-    )
-    u = cursor.fetchone()
+    cursor.execute("SELECT * FROM usuarios WHERE id = ?", (user_id,))
+    user_data = cursor.fetchone()
     conn.close()
-
-    if u:
-        return Usuario(
-            id     = u["id"],
-            nome   = u["nome"],
-            email  = u["email"],
-            perfil = u["perfil"],
-            ativo  = u["ativo"]
-        )
+    if user_data:
+        return Usuario(user_data["id"], user_data["nome"],
+                       user_data["email"], user_data["senha_hash"],
+                       user_data["perfil"])
     return None
 
-
 def verificar_login(email, senha):
-    """
-    Verifica se email e senha estão corretos.
-    Retorna o usuário ou None.
-    """
-    conn   = conectar()
+    conn = conectar()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM usuarios WHERE email = ? AND ativo = 1",
-        (email,)
-    )
-    u = cursor.fetchone()
+    cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
+    user_data = cursor.fetchone()
     conn.close()
-
-    if u and check_password_hash(u["senha_hash"], senha):
-        return Usuario(
-            id     = u["id"],
-            nome   = u["nome"],
-            email  = u["email"],
-            perfil = u["perfil"],
-            ativo  = u["ativo"]
-        )
+    if user_data and check_password_hash(user_data["senha_hash"], senha):
+        return Usuario(user_data["id"], user_data["nome"],
+                       user_data["email"], user_data["senha_hash"],
+                       user_data["perfil"])
     return None
