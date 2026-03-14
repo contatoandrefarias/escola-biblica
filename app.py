@@ -695,6 +695,7 @@ def salvar_chamada():
 # ══════════════════════════════════════
 # RELATORIOS
 # ══════════════════════════════════════
+
 @app.route("/relatorios")
 @login_required
 def relatorios():
@@ -705,12 +706,13 @@ def relatorios():
     disciplina_id = request.args.get("disciplina_id")
     data_inicio   = request.args.get("data_inicio")
     data_fim      = request.args.get("data_fim")
-    status_filtro = request.args.get("status_filtro") # 'todos', 'aprovados', 'reprovados'
+    status_filtro = request.args.get("status_filtro") # 'todos', 'aprovados', 'reprovados', 'cursando'
 
     query = """
         SELECT
             a.nome  as aluno,
             d.nome  as disciplina,
+            d.nota_minima, -- <<<< ESTA É A LINHA QUE VOCÊ PRECISA ADICIONAR/VERIFICAR
             m.nota1, m.nota2, m.nota_final,
             m.status,
             m.data_inicio,
@@ -738,11 +740,9 @@ def relatorios():
         query += " AND m.data_conclusao <= ?"
         params.append(data_fim)
 
-    if status_filtro == 'aprovados':
-        query += " AND m.status = 'aprovado'"
-    elif status_filtro == 'reprovados':
-        query += " AND m.status = 'reprovado'"
-    # Se 'todos' ou vazio, não adiciona filtro de status
+    if status_filtro and status_filtro != 'todos':
+        query += " AND m.status = ?"
+        params.append(status_filtro)
 
     query += """
         GROUP BY m.id
@@ -765,6 +765,8 @@ def relatorios():
         selected_data_inicio=data_inicio,
         selected_data_fim=data_fim,
         selected_status=status_filtro)
+
+# ... (restante do código) ...
 
 
 # ══════════════════════════════════════
