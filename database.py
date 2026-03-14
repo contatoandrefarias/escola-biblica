@@ -34,16 +34,13 @@ def inicializar_banco():
         )
     """)
 
-    # --- INÍCIO DA MODIFICAÇÃO PARA ALUNOS ---
-    # 1. Renomear a tabela alunos existente (se houver)
+    # --- MODIFICAÇÃO PARA ALUNOS (já feita, mantida) ---
     try:
         cursor.execute("ALTER TABLE alunos RENAME TO alunos_old")
     except sqlite3.OperationalError as e:
-        # Se a tabela não existir ou já tiver sido renomeada, ignora
         if "no such table" not in str(e) and "already exists" not in str(e):
-            raise e # Re-lança outros erros inesperados
+            raise e
 
-    # 2. Criar a nova tabela de Alunos SEM a restrição UNIQUE no email
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,30 +54,48 @@ def inicializar_banco():
         )
     """)
 
-    # 3. Copiar os dados da tabela antiga para a nova
-    # Verifica se a tabela antiga existe e tem dados
     cursor.execute("PRAGMA table_info(alunos_old)")
-    if cursor.fetchone(): # Se alunos_old existe
+    if cursor.fetchone():
         cursor.execute("""
             INSERT INTO alunos (id, nome, telefone, email, data_nascimento, membro_igreja, turma_id)
             SELECT id, nome, telefone, email, data_nascimento, membro_igreja, turma_id
             FROM alunos_old
         """)
-        # 4. Excluir a tabela antiga
         cursor.execute("DROP TABLE alunos_old")
     # --- FIM DA MODIFICAÇÃO PARA ALUNOS ---
 
 
-    # Tabela de Professores
+    # --- INÍCIO DA MODIFICAÇÃO PARA PROFESSORES ---
+    # 1. Renomear a tabela professores existente (se houver)
+    try:
+        cursor.execute("ALTER TABLE professores RENAME TO professores_old")
+    except sqlite3.OperationalError as e:
+        if "no such table" not in str(e) and "already exists" not in str(e):
+            raise e
+
+    # 2. Criar a nova tabela de Professores SEM a restrição UNIQUE no email
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS professores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
             telefone TEXT,
-            email TEXT UNIQUE,
+            email TEXT, -- Removido UNIQUE
             especialidade TEXT
         )
     """)
+
+    # 3. Copiar os dados da tabela antiga para a nova
+    cursor.execute("PRAGMA table_info(professores_old)")
+    if cursor.fetchone(): # Se professores_old existe
+        cursor.execute("""
+            INSERT INTO professores (id, nome, telefone, email, especialidade)
+            SELECT id, nome, telefone, email, especialidade
+            FROM professores_old
+        """)
+        # 4. Excluir a tabela antiga
+        cursor.execute("DROP TABLE professores_old")
+    # --- FIM DA MODIFICAÇÃO PARA PROFESSORES ---
+
 
     # Tabela de Disciplinas
     cursor.execute("""
@@ -134,35 +149,35 @@ def inicializar_banco():
     try:
         cursor.execute("ALTER TABLE disciplinas ADD COLUMN nota_minima REAL DEFAULT 6.0")
     except sqlite3.OperationalError:
-        pass # Coluna já existe
+        pass
     try:
         cursor.execute("ALTER TABLE disciplinas ADD COLUMN frequencia_minima REAL DEFAULT 75.0")
     except sqlite3.OperationalError:
-        pass # Coluna já existe
+        pass
     try:
         cursor.execute("ALTER TABLE disciplinas ADD COLUMN ativa INTEGER DEFAULT 1")
     except sqlite3.OperationalError:
-        pass # Coluna já existe
+        pass
     try:
         cursor.execute("ALTER TABLE disciplinas ADD COLUMN tem_atividades INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
-        pass # Coluna já existe
+        pass
 
     # Colunas para turmas
     try:
         cursor.execute("ALTER TABLE turmas ADD COLUMN ativa INTEGER DEFAULT 1")
     except sqlite3.OperationalError:
-        pass # Coluna já existe
+        pass
 
     # Colunas para matriculas
     try:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN nota_final REAL")
     except sqlite3.OperationalError:
-        pass # Coluna já existe
+        pass
     try:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN status TEXT DEFAULT 'cursando'")
     except sqlite3.OperationalError:
-        pass # Coluna já existe
+        pass
 
     # Inserir usuário admin padrão se não existir
     cursor.execute("SELECT COUNT(*) FROM usuarios WHERE email = 'admin@escola.com'")
