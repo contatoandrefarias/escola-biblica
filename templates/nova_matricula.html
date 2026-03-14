@@ -2,51 +2,68 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">➕ Nova Matrícula</h4>
-    <a href="/matriculas" class="btn btn-outline-secondary">
-        ← Voltar
-    </a>
+    <h4 class="fw-bold mb-0">➕ Matricular Turma em Disciplina</h4>
+    <a href="/matriculas" class="btn btn-outline-secondary">← Voltar às Matrículas</a>
 </div>
 
-<div class="card" style="max-width:500px">
-    <div class="card-header">Dados da Matrícula</div>
+<div class="card shadow-sm" style="max-width: 600px;">
     <div class="card-body">
         <form method="POST">
             <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    Aluno <span class="text-danger">*</span>
+                <label for="turma_id" class="form-label fw-semibold">
+                    🏫 Selecionar Turma
                 </label>
-                <select name="aluno_id" class="form-select" required>
-                    <option value="">— Selecione o aluno —</option>
-                    {% for a in alunos %}
-                    <option value="{{ a['id'] }}">
-                        {{ a['nome'] }}
+                <select name="turma_id" id="turma_id" class="form-select" required>
+                    <option value="">— Escolha uma turma —</option>
+                    {% for turma in turmas %}
+                    <option value="{{ turma['id'] }}"
+                        {% if selected_turma == turma['id'] %}selected{% endif %}>
+                        {{ turma['nome'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">
+                    Todos os alunos desta turma serão matriculados na disciplina.
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="disciplina_id" class="form-label fw-semibold">
+                    📚 Selecionar Disciplina
+                </label>
+                <select name="disciplina_id" id="disciplina_id" class="form-select" required>
+                    <option value="">— Escolha uma disciplina —</option>
+                    {% for disc in disciplinas %}
+                    <option value="{{ disc['id'] }}"
+                        {% if selected_disciplina == disc['id'] %}selected{% endif %}>
+                        {{ disc['nome'] }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="mb-4">
-                <label class="form-label fw-semibold">
-                    Disciplina <span class="text-danger">*</span>
-                </label>
-                <select name="disciplina_id"
-                        class="form-select" required>
-                    <option value="">
-                        — Selecione a disciplina —
-                    </option>
-                    {% for d in disciplinas %}
-                    <option value="{{ d['id'] }}">
-                        {{ d['nome'] }}
-                    </option>
-                    {% endfor %}
-                </select>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label for="data_inicio" class="form-label fw-semibold">
+                        🗓️ Data de Início
+                    </label>
+                    <input type="date" name="data_inicio" id="data_inicio"
+                           class="form-control" value="{{ data_inicio or hoje }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="data_conclusao" class="form-label fw-semibold">
+                        🏁 Data de Conclusão (Opcional)
+                    </label>
+                    <input type="date" name="data_conclusao" id="data_conclusao"
+                           class="form-control" value="{{ data_conclusao or '' }}">
+                </div>
             </div>
+
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-danger px-4">
-                    💾 Matricular
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-person-plus-fill me-2"></i> Matricular Turma
                 </button>
-                <a href="/matriculas"
-                   class="btn btn-outline-secondary">
+                <a href="/matriculas" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
             </div>
