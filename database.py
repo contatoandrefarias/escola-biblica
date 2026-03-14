@@ -38,17 +38,20 @@ def inicializar_banco():
     try:
         cursor.execute("ALTER TABLE alunos RENAME TO alunos_old")
     except sqlite3.OperationalError as e:
-        if "no such table" not in str(e) and "already exists" not in str(e):
-            pass # Ignora se a tabela não existe ou já foi renomeada
-        else:
-            raise e
+        # Apenas ignora se a tabela não existe. Não re-lança o erro.
+        if "no such table" not in str(e):
+            raise e # Re-lança outros erros inesperados
+    except Exception as e:
+        # Captura qualquer outro erro inesperado durante o rename
+        print(f"Aviso: Erro ao tentar renomear tabela 'alunos': {e}")
+
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
             telefone TEXT,
-            email TEXT,
+            email TEXT, -- Removido UNIQUE
             data_nascimento TEXT,
             membro_igreja INTEGER DEFAULT 0,
             turma_id INTEGER,
@@ -56,8 +59,9 @@ def inicializar_banco():
         )
     """)
 
+    # Copiar os dados da tabela antiga para a nova, se a tabela antiga existir
     cursor.execute("PRAGMA table_info(alunos_old)")
-    if cursor.fetchone():
+    if cursor.fetchone(): # Se alunos_old existe
         cursor.execute("""
             INSERT INTO alunos (id, nome, telefone, email, data_nascimento, membro_igreja, turma_id)
             SELECT id, nome, telefone, email, data_nascimento, membro_igreja, turma_id
@@ -71,10 +75,12 @@ def inicializar_banco():
     try:
         cursor.execute("ALTER TABLE professores RENAME TO professores_old")
     except sqlite3.OperationalError as e:
-        if "no such table" not in str(e) and "already exists" not in str(e):
-            pass
-        else:
-            raise e
+        # Apenas ignora se a tabela não existe. Não re-lança o erro.
+        if "no such table" not in str(e):
+            raise e # Re-lança outros erros inesperados
+    except Exception as e:
+        # Captura qualquer outro erro inesperado durante o rename
+        print(f"Aviso: Erro ao tentar renomear tabela 'professores': {e}")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS professores (
@@ -87,7 +93,7 @@ def inicializar_banco():
     """)
 
     cursor.execute("PRAGMA table_info(professores_old)")
-    if cursor.fetchone():
+    if cursor.fetchone(): # Se professores_old existe
         cursor.execute("""
             INSERT INTO professores (id, nome, telefone, email, especialidade)
             SELECT id, nome, telefone, email, especialidade
@@ -124,10 +130,10 @@ def inicializar_banco():
             nota1 REAL,
             nota2 REAL,
             nota_final REAL,
-            participacao REAL, -- NOVA COLUNA
-            desafio REAL,      -- NOVA COLUNA
-            prova REAL,        -- NOVA COLUNA
-            status TEXT DEFAULT 'cursando', -- 'cursando', 'aprovado', 'reprovado'
+            participacao REAL,
+            desafio REAL,
+            prova REAL,
+            status TEXT DEFAULT 'cursando',
             UNIQUE(aluno_id, disciplina_id),
             FOREIGN KEY (aluno_id) REFERENCES alunos(id),
             FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id)
@@ -185,15 +191,15 @@ def inicializar_banco():
         cursor.execute("ALTER TABLE matriculas ADD COLUMN status TEXT DEFAULT 'cursando'")
     except sqlite3.OperationalError:
         pass
-    try: # NOVAS COLUNAS
+    try:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN participacao REAL")
     except sqlite3.OperationalError:
         pass
-    try: # NOVAS COLUNAS
+    try:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN desafio REAL")
     except sqlite3.OperationalError:
         pass
-    try: # NOVAS COLUNAS
+    try:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN prova REAL")
     except sqlite3.OperationalError:
         pass
