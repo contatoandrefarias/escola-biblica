@@ -134,8 +134,7 @@ def nova_turma():
         faixa_etaria = request.form.get("faixa_etaria", "").strip()
         if not nome:
             flash("Nome e obrigatorio!", "erro")
-            return render_template("nova_turma.html",
-                                   selected_faixa_etaria=faixa_etaria) # Manter seleção
+            return redirect(url_for("nova_turma"))
         conn   = conectar()
         cursor = conn.cursor()
         try:
@@ -149,16 +148,12 @@ def nova_turma():
                 flash("Já existe uma turma com este nome!", "erro")
             else:
                 flash(f"Erro de integridade ao cadastrar turma: {e}", "erro")
-            return render_template("nova_turma.html",
-                                   selected_faixa_etaria=faixa_etaria) # Manter seleção
         except Exception as e:
             flash(f"Erro inesperado ao cadastrar turma: {e}", "erro")
-            return render_template("nova_turma.html",
-                                   selected_faixa_etaria=faixa_etaria) # Manter seleção
         finally:
             conn.close()
         return redirect(url_for("turmas"))
-    return render_template("nova_turma.html", selected_faixa_etaria='adultos') # Default
+    return render_template("nova_turma.html")
 
 
 @app.route("/turmas/<int:id>/editar", methods=["GET", "POST"])
@@ -184,26 +179,8 @@ def editar_turma(id):
                 flash("Já existe outra turma com este nome!", "erro")
             else:
                 flash(f"Erro de integridade ao atualizar turma: {e}", "erro")
-            # Recarregar dados para o template em caso de erro
-            cursor.execute("SELECT * FROM turmas WHERE id=?", (id,))
-            turma = cursor.fetchone()
-            cursor.execute(
-                "SELECT * FROM alunos WHERE turma_id=? ORDER BY nome", (id,))
-            alunos_turma = cursor.fetchall()
-            conn.close()
-            return render_template("editar_turma.html",
-                                   turma=turma, alunos_turma=alunos_turma)
         except Exception as e:
             flash(f"Erro inesperado ao atualizar turma: {e}", "erro")
-            # Recarregar dados para o template em caso de erro
-            cursor.execute("SELECT * FROM turmas WHERE id=?", (id,))
-            turma = cursor.fetchone()
-            cursor.execute(
-                "SELECT * FROM alunos WHERE turma_id=? ORDER BY nome", (id,))
-            alunos_turma = cursor.fetchall()
-            conn.close()
-            return render_template("editar_turma.html",
-                                   turma=turma, alunos_turma=alunos_turma)
         finally:
             conn.close()
         return redirect(url_for("turmas"))
@@ -343,37 +320,13 @@ def editar_aluno(id):
 
     cursor.execute("SELECT * FROM alunos WHERE id=?", (id,))
     aluno = cursor.fetchone()
-    cursor.execute(
-        "SELECT id,nome FROM turmas WHERE ativa=1 ORDER BY nome")
+    cursor.execute("SELECT id,nome FROM turmas WHERE ativa=1 ORDER BY nome")
     turmas_lista = cursor.fetchall()
     conn.close()
     if not aluno:
         flash("Aluno nao encontrado!", "erro")
         return redirect(url_for("alunos"))
-    return render_template("editar_aluno.html",
-        aluno=aluno, turmas=turmas_lista)
-
-
-@app.route("/alunos/<int:id>/excluir", methods=["POST"])
-@login_required
-def excluir_aluno(id):
-    conn   = conectar()
-    cursor = conn.cursor()
-    try:
-        # Verificar se o aluno tem matrículas
-        cursor.execute("SELECT COUNT(*) FROM matriculas WHERE aluno_id = ?", (id,))
-        if cursor.fetchone()[0] > 0:
-            flash("Não é possível excluir o aluno, pois ele possui matrículas ativas.", "erro")
-            return redirect(url_for("alunos"))
-
-        cursor.execute("DELETE FROM alunos WHERE id=?", (id,))
-        conn.commit()
-        flash("Aluno excluído!", "sucesso")
-    except Exception as e:
-        flash(f"Erro ao excluir aluno: {e}", "erro")
-    finally:
-        conn.close()
-    return redirect(url_for("alunos"))
+    return render_template("editar_aluno.html", aluno=aluno, turmas=turmas_lista)
 
 
 # ══════════════════════════════════════
@@ -394,13 +347,13 @@ def professores():
 @login_required
 def novo_professor():
     if request.method == "POST":
-        nome         = request.form.get("nome", "").strip()
-        telefone     = request.form.get("telefone", "").strip()
-        email        = request.form.get("email", "").strip()
+        nome          = request.form.get("nome", "").strip()
+        telefone      = request.form.get("telefone", "").strip()
+        email         = request.form.get("email", "").strip()
         especialidade = request.form.get("especialidade", "").strip()
         if not nome:
             flash("Nome e obrigatorio!", "erro")
-            return render_template("novo_professor.html")
+            return redirect(url_for("novo_professor"))
         conn   = conectar()
         cursor = conn.cursor()
         try:
@@ -410,16 +363,13 @@ def novo_professor():
             """, (nome, telefone, email, especialidade))
             conn.commit()
             flash(f"Professor '{nome}' cadastrado!", "sucesso")
-            return redirect(url_for("professores"))
         except sqlite3.IntegrityError as e:
-            # Email não é mais UNIQUE, então este erro deve ser para outras restrições
             flash(f"Erro de integridade ao cadastrar professor: {e}", "erro")
-            return render_template("novo_professor.html")
         except Exception as e:
             flash(f"Erro inesperado ao cadastrar professor: {e}", "erro")
-            return render_template("novo_professor.html")
         finally:
             conn.close()
+        return redirect(url_for("professores"))
     return render_template("novo_professor.html")
 
 
@@ -429,9 +379,9 @@ def editar_professor(id):
     conn   = conectar()
     cursor = conn.cursor()
     if request.method == "POST":
-        nome         = request.form.get("nome", "").strip()
-        telefone     = request.form.get("telefone", "").strip()
-        email        = request.form.get("email", "").strip()
+        nome          = request.form.get("nome", "").strip()
+        telefone      = request.form.get("telefone", "").strip()
+        email         = request.form.get("email", "").strip()
         especialidade = request.form.get("especialidade", "").strip()
         if not nome:
             flash("Nome e obrigatorio!", "erro")
@@ -447,22 +397,13 @@ def editar_professor(id):
             """, (nome, telefone, email, especialidade, id))
             conn.commit()
             flash("Professor atualizado!", "sucesso")
-            return redirect(url_for("professores"))
         except sqlite3.IntegrityError as e:
-            # Email não é mais UNIQUE, então este erro deve ser para outras restrições
             flash(f"Erro de integridade ao atualizar professor: {e}", "erro")
-            cursor.execute("SELECT * FROM professores WHERE id=?", (id,))
-            professor = cursor.fetchone()
-            conn.close()
-            return render_template("editar_professor.html", professor=professor)
         except Exception as e:
             flash(f"Erro inesperado ao atualizar professor: {e}", "erro")
-            cursor.execute("SELECT * FROM professores WHERE id=?", (id,))
-            professor = cursor.fetchone()
-            conn.close()
-            return render_template("editar_professor.html", professor=professor)
         finally:
             conn.close()
+        return redirect(url_for("professores"))
     cursor.execute("SELECT * FROM professores WHERE id=?", (id,))
     professor = cursor.fetchone()
     conn.close()
@@ -470,28 +411,6 @@ def editar_professor(id):
         flash("Professor nao encontrado!", "erro")
         return redirect(url_for("professores"))
     return render_template("editar_professor.html", professor=professor)
-
-
-@app.route("/professores/<int:id>/excluir", methods=["POST"])
-@login_required
-def excluir_professor(id):
-    conn   = conectar()
-    cursor = conn.cursor()
-    try:
-        # Verificar se o professor está associado a alguma disciplina
-        cursor.execute("SELECT COUNT(*) FROM disciplinas WHERE professor_id = ?", (id,))
-        if cursor.fetchone()[0] > 0:
-            flash("Não é possível excluir o professor, pois ele está associado a uma ou mais disciplinas.", "erro")
-            return redirect(url_for("professores"))
-
-        cursor.execute("DELETE FROM professores WHERE id=?", (id,))
-        conn.commit()
-        flash("Professor excluído!", "sucesso")
-    except Exception as e:
-        flash(f"Erro ao excluir professor: {e}", "erro")
-    finally:
-        conn.close()
-    return redirect(url_for("professores"))
 
 
 # ══════════════════════════════════════
@@ -519,23 +438,21 @@ def nova_disciplina():
     conn   = conectar()
     cursor = conn.cursor()
     if request.method == "POST":
-        nome            = request.form.get("nome", "").strip()
-        descricao       = request.form.get("descricao", "").strip()
-        duracao_semanas = request.form.get("duracao_semanas", type=int)
-        nota_minima     = request.form.get("nota_minima", type=float)
+        nome              = request.form.get("nome", "").strip()
+        descricao         = request.form.get("descricao", "").strip()
+        duracao_semanas   = request.form.get("duracao_semanas", type=int)
+        nota_minima       = request.form.get("nota_minima", type=float)
         frequencia_minima = request.form.get("frequencia_minima", type=float)
-        tem_atividades  = 1 if request.form.get("tem_atividades") else 0
-        professor_id    = request.form.get("professor_id") or None
-        ativa           = 1 if request.form.get("ativa") else 0
+        tem_atividades    = 1 if request.form.get("tem_atividades") else 0
+        professor_id      = request.form.get("professor_id") or None
+        ativa             = 1 if request.form.get("ativa") else 0
 
         if not nome or not duracao_semanas or nota_minima is None or frequencia_minima is None:
-            flash("Campos obrigatórios não preenchidos!", "erro")
+            flash("Nome, duração, nota mínima e frequência mínima são obrigatórios!", "erro")
             cursor.execute("SELECT id,nome FROM professores ORDER BY nome")
             professores_lista = cursor.fetchall()
             conn.close()
-            return render_template("nova_disciplina.html",
-                                   professores=professores_lista,
-                                   form_data=request.form) # Manter dados do formulário
+            return render_template("nova_disciplina.html", professores=professores_lista)
 
         try:
             cursor.execute("""
@@ -547,28 +464,16 @@ def nova_disciplina():
                   frequencia_minima, tem_atividades, professor_id, ativa))
             conn.commit()
             flash(f"Disciplina '{nome}' criada!", "sucesso")
-            return redirect(url_for("disciplinas"))
         except sqlite3.IntegrityError as e:
             if "disciplinas.nome" in str(e):
                 flash("Já existe uma disciplina com este nome!", "erro")
             else:
                 flash(f"Erro de integridade ao cadastrar disciplina: {e}", "erro")
-            cursor.execute("SELECT id,nome FROM professores ORDER BY nome")
-            professores_lista = cursor.fetchall()
-            conn.close()
-            return render_template("nova_disciplina.html",
-                                   professores=professores_lista,
-                                   form_data=request.form)
         except Exception as e:
             flash(f"Erro inesperado ao cadastrar disciplina: {e}", "erro")
-            cursor.execute("SELECT id,nome FROM professores ORDER BY nome")
-            professores_lista = cursor.fetchall()
-            conn.close()
-            return render_template("nova_disciplina.html",
-                                   professores=professores_lista,
-                                   form_data=request.form)
         finally:
             conn.close()
+        return redirect(url_for("disciplinas"))
 
     cursor.execute("SELECT id,nome FROM professores ORDER BY nome")
     professores_lista = cursor.fetchall()
@@ -582,25 +487,23 @@ def editar_disciplina(id):
     conn   = conectar()
     cursor = conn.cursor()
     if request.method == "POST":
-        nome            = request.form.get("nome", "").strip()
-        descricao       = request.form.get("descricao", "").strip()
-        duracao_semanas = request.form.get("duracao_semanas", type=int)
-        nota_minima     = request.form.get("nota_minima", type=float)
+        nome              = request.form.get("nome", "").strip()
+        descricao         = request.form.get("descricao", "").strip()
+        duracao_semanas   = request.form.get("duracao_semanas", type=int)
+        nota_minima       = request.form.get("nota_minima", type=float)
         frequencia_minima = request.form.get("frequencia_minima", type=float)
-        tem_atividades  = 1 if request.form.get("tem_atividades") else 0
-        professor_id    = request.form.get("professor_id") or None
-        ativa           = 1 if request.form.get("ativa") else 0
+        tem_atividades    = 1 if request.form.get("tem_atividades") else 0
+        professor_id      = request.form.get("professor_id") or None
+        ativa             = 1 if request.form.get("ativa") else 0
 
         if not nome or not duracao_semanas or nota_minima is None or frequencia_minima is None:
-            flash("Campos obrigatórios não preenchidos!", "erro")
+            flash("Nome, duração, nota mínima e frequência mínima são obrigatórios!", "erro")
             cursor.execute("SELECT * FROM disciplinas WHERE id=?", (id,))
             disciplina = cursor.fetchone()
             cursor.execute("SELECT id,nome FROM professores ORDER BY nome")
             professores_lista = cursor.fetchall()
             conn.close()
-            return render_template("editar_disciplina.html",
-                                   disciplina=disciplina,
-                                   professores=professores_lista)
+            return render_template("editar_disciplina.html", disciplina=disciplina, professores=professores_lista)
 
         try:
             cursor.execute("""
@@ -612,32 +515,16 @@ def editar_disciplina(id):
                   frequencia_minima, tem_atividades, professor_id, ativa, id))
             conn.commit()
             flash("Disciplina atualizada!", "sucesso")
-            return redirect(url_for("disciplinas"))
         except sqlite3.IntegrityError as e:
             if "disciplinas.nome" in str(e):
                 flash("Já existe outra disciplina com este nome!", "erro")
             else:
                 flash(f"Erro de integridade ao atualizar disciplina: {e}", "erro")
-            cursor.execute("SELECT * FROM disciplinas WHERE id=?", (id,))
-            disciplina = cursor.fetchone()
-            cursor.execute("SELECT id,nome FROM professores ORDER BY nome")
-            professores_lista = cursor.fetchall()
-            conn.close()
-            return render_template("editar_disciplina.html",
-                                   disciplina=disciplina,
-                                   professores=professores_lista)
         except Exception as e:
             flash(f"Erro inesperado ao atualizar disciplina: {e}", "erro")
-            cursor.execute("SELECT * FROM disciplinas WHERE id=?", (id,))
-            disciplina = cursor.fetchone()
-            cursor.execute("SELECT id,nome FROM professores ORDER BY nome")
-            professores_lista = cursor.fetchall()
-            conn.close()
-            return render_template("editar_disciplina.html",
-                                   disciplina=disciplina,
-                                   professores=professores_lista)
         finally:
             conn.close()
+        return redirect(url_for("disciplinas"))
 
     cursor.execute("SELECT * FROM disciplinas WHERE id=?", (id,))
     disciplina = cursor.fetchone()
@@ -647,30 +534,7 @@ def editar_disciplina(id):
     if not disciplina:
         flash("Disciplina nao encontrada!", "erro")
         return redirect(url_for("disciplinas"))
-    return render_template("editar_disciplina.html",
-        disciplina=disciplina, professores=professores_lista)
-
-
-@app.route("/disciplinas/<int:id>/excluir", methods=["POST"])
-@login_required
-def excluir_disciplina(id):
-    conn   = conectar()
-    cursor = conn.cursor()
-    try:
-        # Verificar se a disciplina tem matrículas
-        cursor.execute("SELECT COUNT(*) FROM matriculas WHERE disciplina_id = ?", (id,))
-        if cursor.fetchone()[0] > 0:
-            flash("Não é possível excluir a disciplina, pois ela possui matrículas ativas.", "erro")
-            return redirect(url_for("disciplinas"))
-
-        cursor.execute("DELETE FROM disciplinas WHERE id=?", (id,))
-        conn.commit()
-        flash("Disciplina excluída!", "sucesso")
-    except Exception as e:
-        flash(f"Erro ao excluir disciplina: {e}", "erro")
-    finally:
-        conn.close()
-    return redirect(url_for("disciplinas"))
+    return render_template("editar_disciplina.html", disciplina=disciplina, professores=professores_lista)
 
 
 # ══════════════════════════════════════
@@ -682,33 +546,36 @@ def matriculas():
     conn   = conectar()
     cursor = conn.cursor()
 
-    selected_turma      = request.args.get("turma_id", type=int)
-    selected_disciplina = request.args.get("disciplina_id", type=int)
+    turma_id_filtro = request.args.get("turma_id", type=int)
+    disciplina_id_filtro = request.args.get("disciplina_id", type=int)
 
     query = """
         SELECT
-            m.id as matricula_id, a.nome as aluno_nome, t.nome as turma_nome,
-            d.nome as disciplina_nome, m.data_inicio, m.data_conclusao,
+            m.id as matricula_id,
+            a.nome as aluno_nome,
+            t.nome as turma_nome,
+            d.nome as disciplina_nome,
             m.nota1, m.nota2, m.nota_final, m.status,
-            d.nota_minima, d.frequencia_minima, t.faixa_etaria,
-            m.participacao, m.desafio, m.prova -- NOVAS COLUNAS
+            m.data_inicio, m.data_conclusao,
+            d.nota_minima, d.frequencia_minima,
+            t.faixa_etaria,
+            m.participacao, m.desafio, m.prova
         FROM matriculas m
-        JOIN alunos      a ON m.aluno_id      = a.id
-        LEFT JOIN turmas t ON a.turma_id      = t.id
+        JOIN alunos a ON m.aluno_id = a.id
+        LEFT JOIN turmas t ON a.turma_id = t.id
         JOIN disciplinas d ON m.disciplina_id = d.id
         WHERE 1=1
     """
     params = []
 
-    if selected_turma:
+    if turma_id_filtro:
         query += " AND t.id = ?"
-        params.append(selected_turma)
-    if selected_disciplina:
+        params.append(turma_id_filtro)
+    if disciplina_id_filtro:
         query += " AND d.id = ?"
-        params.append(selected_disciplina)
+        params.append(disciplina_id_filtro)
 
-    query += " ORDER BY t.nome, a.nome, d.nome"
-
+    query += " ORDER BY a.nome, d.nome"
     cursor.execute(query, tuple(params))
     lista = cursor.fetchall()
 
@@ -719,17 +586,17 @@ def matriculas():
     conn.close()
 
     return render_template("matriculas.html",
-        matriculas=lista,
-        turmas=turmas_lista,
-        disciplinas=disciplinas_lista,
-        selected_turma=selected_turma,
-        selected_disciplina=selected_disciplina)
+                           matriculas=lista,
+                           turmas=turmas_lista,
+                           disciplinas=disciplinas_lista,
+                           selected_turma=turma_id_filtro,
+                           selected_disciplina=disciplina_id_filtro)
 
 
 @app.route("/matriculas/nova", methods=["GET", "POST"])
 @login_required
 def nova_matricula():
-    conn   = conectar()
+    conn = conectar()
     cursor = conn.cursor()
     hoje = date.today().isoformat()
 
@@ -740,7 +607,8 @@ def nova_matricula():
         data_conclusao = request.form.get("data_conclusao")
 
         if not turma_id or not disciplina_id or not data_inicio:
-            flash("Todos os campos obrigatórios devem ser preenchidos!", "erro")
+            flash("Turma, Disciplina e Data de Início são obrigatórios!", "erro")
+            # Recarregar listas para o template
             cursor.execute("SELECT id, nome FROM turmas WHERE ativa=1 ORDER BY nome")
             turmas_lista = cursor.fetchall()
             cursor.execute("SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
@@ -749,80 +617,59 @@ def nova_matricula():
             return render_template("nova_matricula.html",
                                    turmas=turmas_lista,
                                    disciplinas=disciplinas_lista,
+                                   hoje=hoje,
                                    selected_turma=turma_id,
                                    selected_disciplina=disciplina_id,
                                    data_inicio=data_inicio,
-                                   data_conclusao=data_conclusao,
-                                   hoje=hoje)
+                                   data_conclusao=data_conclusao)
 
-        try:
-            # Obter todos os alunos da turma selecionada
-            cursor.execute("SELECT id, nome FROM alunos WHERE turma_id = ?", (turma_id,))
-            alunos_da_turma = cursor.fetchall()
+        # Obter todos os alunos da turma selecionada
+        cursor.execute("SELECT id, nome FROM alunos WHERE turma_id = ?", (turma_id,))
+        alunos_da_turma = cursor.fetchall()
 
-            if not alunos_da_turma:
-                flash("Nenhum aluno encontrado nesta turma para matricular.", "aviso")
-                cursor.execute("SELECT id, nome FROM turmas WHERE ativa=1 ORDER BY nome")
-                turmas_lista = cursor.fetchall()
-                cursor.execute("SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
-                disciplinas_lista = cursor.fetchall()
-                conn.close()
-                return render_template("nova_matricula.html",
-                                       turmas=turmas_lista,
-                                       disciplinas=disciplinas_lista,
-                                       selected_turma=turma_id,
-                                       selected_disciplina=disciplina_id,
-                                       data_inicio=data_inicio,
-                                       data_conclusao=data_conclusao,
-                                       hoje=hoje)
+        if not alunos_da_turma:
+            flash("Nenhum aluno encontrado nesta turma para matricular.", "aviso")
+            cursor.execute("SELECT id, nome FROM turmas WHERE ativa=1 ORDER BY nome")
+            turmas_lista = cursor.fetchall()
+            cursor.execute("SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
+            disciplinas_lista = cursor.fetchall()
+            conn.close()
+            return render_template("nova_matricula.html",
+                                   turmas=turmas_lista,
+                                   disciplinas=disciplinas_lista,
+                                   hoje=hoje,
+                                   selected_turma=turma_id,
+                                   selected_disciplina=disciplina_id,
+                                   data_inicio=data_inicio,
+                                   data_conclusao=data_conclusao)
 
-            matriculas_criadas = 0
-            matriculas_existentes = 0
-
-            for aluno in alunos_da_turma:
-                aluno_id = aluno['id']
-                # Verificar se a matrícula já existe
+        matriculas_criadas = 0
+        matriculas_existentes = 0
+        for aluno in alunos_da_turma:
+            try:
                 cursor.execute("""
-                    SELECT id FROM matriculas
-                    WHERE aluno_id = ? AND disciplina_id = ?
-                """, (aluno_id, disciplina_id))
-                if cursor.fetchone():
-                    matriculas_existentes += 1
-                else:
-                    cursor.execute("""
-                        INSERT INTO matriculas
-                            (aluno_id, disciplina_id, data_inicio, data_conclusao, status)
-                        VALUES (?, ?, ?, ?, 'cursando')
-                    """, (aluno_id, disciplina_id, data_inicio, data_conclusao))
-                    matriculas_criadas += 1
+                    INSERT INTO matriculas
+                        (aluno_id, disciplina_id, data_inicio, data_conclusao, status)
+                    VALUES (?, ?, ?, ?, 'cursando')
+                """, (aluno['id'], disciplina_id, data_inicio, data_conclusao))
+                matriculas_criadas += 1
+            except sqlite3.IntegrityError:
+                # UNIQUE constraint failed (aluno já matriculado nesta disciplina)
+                matriculas_existentes += 1
+            except Exception as e:
+                flash(f"Erro ao matricular aluno {aluno['nome']}: {e}", "erro")
 
-            conn.commit()
+        conn.commit()
+        conn.close()
 
-            if matriculas_criadas > 0:
-                flash(f"{matriculas_criadas} matrícula(s) criada(s) com sucesso!", "sucesso")
-            if matriculas_existentes > 0:
-                flash(f"{matriculas_existentes} aluno(s) já estavam matriculado(s) nesta disciplina.", "aviso")
+        if matriculas_criadas > 0:
+            flash(f"{matriculas_criadas} matrículas criadas com sucesso!", "sucesso")
+        if matriculas_existentes > 0:
+            flash(f"{matriculas_existentes} alunos já estavam matriculados nesta disciplina.", "aviso")
 
-            return redirect(url_for("matriculas"))
+        return redirect(url_for("matriculas"))
 
-        except Exception as e:
-            flash(f"Erro inesperado ao matricular turma: {e}", "erro")
-            cursor.execute("SELECT id, nome FROM turmas WHERE ativa=1 ORDER BY nome")
-            turmas_lista = cursor.fetchall()
-            cursor.execute("SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
-            disciplinas_lista = cursor.fetchall()
-            conn.close()
-            return render_template("nova_matricula.html",
-                                   turmas=turmas_lista,
-                                   disciplinas=disciplinas_lista,
-                                   selected_turma=turma_id,
-                                   selected_disciplina=disciplina_id,
-                                   data_inicio=data_inicio,
-                                   data_conclusao=data_conclusao,
-                                   hoje=hoje)
-        finally:
-            conn.close()
-
+    # GET request
     cursor.execute("SELECT id, nome FROM turmas WHERE ativa=1 ORDER BY nome")
     turmas_lista = cursor.fetchall()
     cursor.execute("SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
@@ -837,14 +684,14 @@ def nova_matricula():
 @app.route("/matriculas/<int:id>/editar", methods=["GET", "POST"])
 @login_required
 def editar_matricula(id):
-    conn   = conectar()
+    conn = conectar()
     cursor = conn.cursor()
 
     if request.method == "POST":
         data_inicio   = request.form.get("data_inicio")
         data_conclusao = request.form.get("data_conclusao")
 
-        # Obter a faixa etária da turma do aluno para aplicar a lógica de notas
+        # Obter faixa etária da turma para aplicar a lógica correta
         cursor.execute("""
             SELECT t.faixa_etaria, d.nota_minima, d.frequencia_minima
             FROM matriculas m
@@ -856,7 +703,7 @@ def editar_matricula(id):
         matricula_info = cursor.fetchone()
 
         if not matricula_info:
-            flash("Matrícula não encontrada.", "erro")
+            flash("Matrícula não encontrada!", "erro")
             conn.close()
             return redirect(url_for("matriculas"))
 
@@ -866,165 +713,72 @@ def editar_matricula(id):
 
         nota1 = None
         nota2 = None
-        nota_final = None
-        status = 'cursando'
         participacao = None
         desafio = None
         prova = None
 
         if faixa_etaria == 'criancas':
-            # Crianças não têm notas, status baseado apenas na frequência
-            nota1 = None
-            nota2 = None
-            nota_final = None
-            participacao = None
-            desafio = None
-            prova = None
+            # Não há notas para crianças
+            pass
         elif faixa_etaria == 'adolescentes_jovens':
-            # Adolescentes/Jovens: N1 = Participação (1) + Desafio (1) + Prova (8)
             participacao = request.form.get("participacao", type=float)
             desafio      = request.form.get("desafio", type=float)
             prova        = request.form.get("prova", type=float)
 
+            # Calcular nota1 a partir dos componentes
             if participacao is not None and desafio is not None and prova is not None:
                 nota1 = (participacao or 0) + (desafio or 0) + (prova or 0)
-                nota_final = nota1
             else:
-                nota1 = None
-                nota_final = None
-            nota2 = None # Não usa N2
+                nota1 = None # Se algum componente estiver faltando, N1 é nulo
         else: # Adultos
             nota1 = request.form.get("nota1", type=float)
             nota2 = request.form.get("nota2", type=float)
 
-            if nota1 is not None and nota2 is not None:
-                nota_final = (nota1 + nota2) / 2
-            elif nota1 is not None:
-                nota_final = nota1 # Se só tem N1, usa N1 como final
-            elif nota2 is not None:
-                nota_final = nota2 # Se só tem N2, usa N2 como final
-            else:
-                nota_final = None
-
-        # Sobrescrever nota_final se fornecida (para adultos e adolescentes/jovens)
-        if faixa_etaria != 'criancas':
-            if request.form.get("nota_final_override"):
-                nota_final = request.form.get("nota_final_override", type=float)
-
-        # Calcular frequência para determinar status
-        cursor.execute("""
-            SELECT
-                COUNT(p.id) as total_aulas,
-                SUM(p.presente) as presencas
-            FROM presencas p
-            WHERE p.matricula_id = ?
-        """, (id,))
-        frequencia_data = cursor.fetchone()
-        total_aulas = frequencia_data['total_aulas'] or 0
-        presencas = frequencia_data['presencas'] or 0
-
-        frequencia_percentual = 0.0
-        if total_aulas > 0:
-            frequencia_percentual = (presencas / total_aulas) * 100
-
-        # Lógica para determinar o status
-        if data_conclusao: # Se a disciplina foi concluída
-            if faixa_etaria == 'criancas':
-                if frequencia_percentual >= frequencia_minima:
-                    status = 'aprovado'
-                else:
-                    status = 'reprovado'
-            elif faixa_etaria == 'adolescentes_jovens':
-                if nota_final is not None and nota_final >= nota_minima and \
-                   frequencia_percentual >= frequencia_minima:
-                    status = 'aprovado'
-                else:
-                    status = 'reprovado'
-            else: # Adultos
-                if nota_final is not None and nota_final >= nota_minima and \
-                   frequencia_percentual >= frequencia_minima:
-                    status = 'aprovado'
-                else:
-                    status = 'reprovado'
-        else:
-            status = 'cursando' # Ainda não concluída
+        # Recalcular nota_final e status
+        _atualizar_status_matricula(id, conn) # Esta função já recalcula nota_final e status
 
         try:
             cursor.execute("""
                 UPDATE matriculas
-                SET data_inicio=?, data_conclusao=?,
-                    nota1=?, nota2=?, nota_final=?, status=?,
-                    participacao=?, desafio=?, prova=?
-                WHERE id=?
+                SET data_inicio = ?, data_conclusao = ?,
+                    nota1 = ?, nota2 = ?,
+                    participacao = ?, desafio = ?, prova = ?
+                WHERE id = ?
             """, (data_inicio, data_conclusao,
-                  nota1, nota2, nota_final, status,
-                  participacao, desafio, prova, id))
+                  nota1, nota2,
+                  participacao, desafio, prova,
+                  id))
             conn.commit()
             flash("Matrícula atualizada!", "sucesso")
-            return redirect(url_for("matriculas"))
         except Exception as e:
             flash(f"Erro inesperado ao atualizar matrícula: {e}", "erro")
-            # Recarregar dados para o template em caso de erro
-            cursor.execute("""
-                SELECT
-                    m.*, a.nome as aluno_nome, d.nome as disciplina_nome,
-                    d.nota_minima, d.frequencia_minima, t.faixa_etaria, t.nome as turma_nome
-                FROM matriculas m
-                JOIN alunos a ON m.aluno_id = a.id
-                JOIN disciplinas d ON m.disciplina_id = d.id
-                LEFT JOIN turmas t ON a.turma_id = t.id
-                WHERE m.id = ?
-            """, (id,))
-            matricula = cursor.fetchone()
-            conn.close()
-            return render_template("editar_matricula.html",
-                                   matricula=matricula,
-                                   total_aulas=total_aulas,
-                                   presencas=presencas,
-                                   frequencia_percentual=frequencia_percentual)
         finally:
             conn.close()
+        return redirect(url_for("matriculas"))
 
     # GET request
     cursor.execute("""
         SELECT
-            m.*, a.nome as aluno_nome, d.nome as disciplina_nome,
-            d.nota_minima, d.frequencia_minima, t.faixa_etaria, t.nome as turma_nome
+            m.*,
+            a.nome as aluno_nome,
+            d.nome as disciplina_nome,
+            t.nome as turma_nome,
+            t.faixa_etaria,
+            d.nota_minima, d.frequencia_minima
         FROM matriculas m
         JOIN alunos a ON m.aluno_id = a.id
-        JOIN disciplinas d ON m.disciplina_id = d.id
         LEFT JOIN turmas t ON a.turma_id = t.id
+        JOIN disciplinas d ON m.disciplina_id = d.id
         WHERE m.id = ?
     """, (id,))
     matricula = cursor.fetchone()
+    conn.close()
 
     if not matricula:
         flash("Matrícula não encontrada!", "erro")
-        conn.close()
         return redirect(url_for("matriculas"))
 
-    # Calcular frequência para exibição
-    cursor.execute("""
-        SELECT
-            COUNT(p.id) as total_aulas,
-            SUM(p.presente) as presencas
-        FROM presencas p
-        WHERE p.matricula_id = ?
-    """, (id,))
-    frequencia_data = cursor.fetchone()
-    total_aulas = frequencia_data['total_aulas'] or 0
-    presencas = frequencia_data['presencas'] or 0
-
-    frequencia_percentual = 0.0
-    if total_aulas > 0:
-        frequencia_percentual = (presencas / total_aulas) * 100
-
-    conn.close()
-    return render_template("editar_matricula.html",
-                           matricula=matricula,
-                           total_aulas=total_aulas,
-                           presencas=presencas,
-                           frequencia_percentual=frequencia_percentual)
+    return render_template("editar_matricula.html", matricula=matricula)
 
 
 @app.route("/matriculas/<int:id>/excluir", methods=["POST"])
@@ -1035,9 +789,9 @@ def excluir_matricula(id):
     try:
         # Excluir presenças associadas primeiro
         cursor.execute("DELETE FROM presencas WHERE matricula_id = ?", (id,))
-        cursor.execute("DELETE FROM matriculas WHERE id=?", (id,))
+        cursor.execute("DELETE FROM matriculas WHERE id = ?", (id,))
         conn.commit()
-        flash("Matrícula excluída!", "sucesso")
+        flash("Matrícula excluída com sucesso!", "sucesso")
     except Exception as e:
         flash(f"Erro ao excluir matrícula: {e}", "erro")
     finally:
@@ -1053,156 +807,100 @@ def excluir_matricula(id):
 def presenca():
     conn   = conectar()
     cursor = conn.cursor()
-
-    # Obter todas as disciplinas ativas
-    cursor.execute("SELECT id, nome FROM disciplinas WHERE ativa=1 ORDER BY nome")
+    cursor.execute("""
+        SELECT d.id, d.nome, p.nome as professor_nome
+        FROM disciplinas d
+        LEFT JOIN professores p ON d.professor_id = p.id
+        WHERE d.ativa = 1
+        ORDER BY d.nome
+    """)
     disciplinas_ativas = cursor.fetchall()
-
-    # Obter disciplinas que o usuário logado está cursando (se for aluno)
-    disciplinas_aluno = []
-    if current_user.is_aluno:
-        aluno_id = current_user.aluno_id
-        if aluno_id:
-            cursor.execute("""
-                SELECT d.id, d.nome, m.status
-                FROM matriculas m
-                JOIN disciplinas d ON m.disciplina_id = d.id
-                WHERE m.aluno_id = ?
-                ORDER BY d.nome
-            """, (aluno_id,))
-            disciplinas_aluno = cursor.fetchall()
-
     conn.close()
+    hoje = date.today().isoformat()
     return render_template("presenca.html",
-                           disciplinas_ativas=disciplinas_ativas,
-                           disciplinas_aluno=disciplinas_aluno)
+                           disciplinas=disciplinas_ativas,
+                           hoje=hoje)
 
 
 @app.route("/presenca/chamada", methods=["GET", "POST"])
 @login_required
-def presenca_chamada():
-    conn   = conectar()
+def chamada():
+    conn = conectar()
     cursor = conn.cursor()
 
     disciplina_id = request.args.get("disciplina_id", type=int)
     data_aula     = request.args.get("data_aula")
 
     if not disciplina_id or not data_aula:
-        flash("Disciplina e data da aula são obrigatórias.", "erro")
+        flash("Disciplina e data da aula são obrigatórias!", "erro")
         conn.close()
         return redirect(url_for("presenca"))
 
-    # Obter informações da disciplina e da turma (faixa etária)
+    # Obter nome da disciplina e se tem atividades
+    cursor.execute("SELECT nome, tem_atividades FROM disciplinas WHERE id = ?", (disciplina_id,))
+    disciplina_info = cursor.fetchone()
+    if not disciplina_info:
+        flash("Disciplina não encontrada!", "erro")
+        conn.close()
+        return redirect(url_for("presenca"))
+    disciplina_nome = disciplina_info['nome']
+    tem_atividades = disciplina_info['tem_atividades']
+
+    # Obter faixa etária da turma para exibição condicional
     cursor.execute("""
-        SELECT
-            d.nome, d.tem_atividades, d.nota_minima, d.frequencia_minima,
-            t.faixa_etaria
+        SELECT t.faixa_etaria
         FROM disciplinas d
-        LEFT JOIN matriculas m ON d.id = m.disciplina_id
-        LEFT JOIN alunos a ON m.aluno_id = a.id
-        LEFT JOIN turmas t ON a.turma_id = t.id
+        JOIN matriculas m ON d.id = m.disciplina_id
+        JOIN alunos a ON m.aluno_id = a.id
+        JOIN turmas t ON a.turma_id = t.id
         WHERE d.id = ?
         LIMIT 1
     """, (disciplina_id,))
-    disciplina_info = cursor.fetchone()
-
-    if not disciplina_info:
-        flash("Disciplina não encontrada.", "erro")
-        conn.close()
-        return redirect(url_for("presenca"))
-
-    disciplina_nome = disciplina_info['nome']
-    tem_atividades  = disciplina_info['tem_atividades']
-    faixa_etaria    = disciplina_info['faixa_etaria']
-    nota_minima_disc = disciplina_info['nota_minima']
-    frequencia_minima_disc = disciplina_info['frequencia_minima']
+    faixa_etaria_info = cursor.fetchone()
+    faixa_etaria = faixa_etaria_info['faixa_etaria'] if faixa_etaria_info else 'adultos' # Default para adultos
 
     if request.method == "POST":
-        try:
-            # Primeiro, verificar se já existe um registro de presença para esta disciplina e data
+        # Processar o formulário de chamada
+        cursor.execute("SELECT id FROM matriculas WHERE disciplina_id = ?", (disciplina_id,))
+        matriculas_da_disciplina = cursor.fetchall()
+
+        for mat in matriculas_da_disciplina:
+            matricula_id = mat['id']
+            presente = 1 if request.form.get(f"presente_{matricula_id}") else 0
+            fez_atividade = 1 if tem_atividades and request.form.get(f"atividade_{matricula_id}") else 0
+
             cursor.execute("""
-                SELECT p.id, p.matricula_id
-                FROM presencas p
-                JOIN matriculas m ON p.matricula_id = m.id
-                WHERE m.disciplina_id = ? AND p.data_aula = ?
-            """, (disciplina_id, data_aula))
-            presencas_existentes = cursor.fetchall()
+                INSERT INTO presencas (matricula_id, data_aula, presente, fez_atividade)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(matricula_id, data_aula) DO UPDATE SET
+                    presente = EXCLUDED.presente,
+                    fez_atividade = EXCLUDED.fez_atividade
+            """, (matricula_id, data_aula, presente, fez_atividade))
 
-            if presencas_existentes:
-                # Atualizar presenças existentes
-                for p_existente in presencas_existentes:
-                    matricula_id = p_existente['matricula_id']
-                    presente_val = 1 if request.form.get(f"presente_{matricula_id}") else 0
-                    atividade_val = 1 if tem_atividades and request.form.get(f"atividade_{matricula_id}") else 0
+            # Após registrar a presença, recalcular o status da matrícula
+            _atualizar_status_matricula(matricula_id, conn)
 
-                    cursor.execute("""
-                        UPDATE presencas
-                        SET presente = ?, fez_atividade = ?
-                        WHERE id = ?
-                    """, (presente_val, atividade_val, p_existente['id']))
-            else:
-                # Inserir novas presenças
-                # Obter todas as matrículas ativas para esta disciplina
-                cursor.execute("""
-                    SELECT m.id as matricula_id
-                    FROM matriculas m
-                    WHERE m.disciplina_id = ? AND m.status = 'cursando'
-                """, (disciplina_id,))
-                matriculas_ativas = cursor.fetchall()
-
-                for mat in matriculas_ativas:
-                    matricula_id = mat['matricula_id']
-                    presente_val = 1 if request.form.get(f"presente_{matricula_id}") else 0
-                    atividade_val = 1 if tem_atividades and request.form.get(f"atividade_{matricula_id}") else 0
-
-                    cursor.execute("""
-                        INSERT INTO presencas (matricula_id, data_aula, presente, fez_atividade)
-                        VALUES (?, ?, ?, ?)
-                    """, (matricula_id, data_aula, presente_val, atividade_val))
-
-            conn.commit()
-            flash("Chamada salva com sucesso!", "sucesso")
-
-            # Após salvar a chamada, re-calcular status das matrículas afetadas
-            cursor.execute("""
-                SELECT m.id
-                FROM matriculas m
-                WHERE m.disciplina_id = ? AND m.status = 'cursando'
-            """, (disciplina_id,))
-            matriculas_para_atualizar = cursor.fetchall()
-
-            for mat_id_row in matriculas_para_atualizar:
-                matricula_id = mat_id_row['id']
-                # Chamar a lógica de atualização de status para cada matrícula
-                _atualizar_status_matricula(matricula_id, conn)
-
-            conn.commit() # Commit final após todas as atualizações de status
-
-            return redirect(url_for("presenca_chamada",
-                                   disciplina_id=disciplina_id,
-                                   data_aula=data_aula))
-        except Exception as e:
-            flash(f"Erro ao salvar chamada: {e}", "erro")
-            conn.close()
-            return redirect(url_for("presenca_chamada",
-                                   disciplina_id=disciplina_id,
-                                   data_aula=data_aula))
-        finally:
-            conn.close()
+        conn.commit()
+        flash("Chamada salva com sucesso!", "sucesso")
+        conn.close()
+        return redirect(url_for("chamada", disciplina_id=disciplina_id, data_aula=data_aula))
 
     # GET request: Carregar dados para exibir a chamada
     query_alunos = """
         SELECT
-            a.id as aluno_id, a.nome as aluno_nome,
-            m.id as matricula_id, m.nota1, m.nota2, m.nota_final, m.status,
-            m.participacao, m.desafio, m.prova, -- NOVAS COLUNAS
+            m.id as matricula_id,
+            a.nome as aluno_nome,
+            m.nota1, m.nota2, m.nota_final, m.status,
             d.nota_minima, d.frequencia_minima,
+            t.faixa_etaria, -- Adicionado faixa_etaria
+            m.participacao, m.desafio, m.prova, -- NOVAS COLUNAS
             (SELECT COUNT(p_sub.id) FROM presencas p_sub WHERE p_sub.matricula_id = m.id) as total_aulas,
             (SELECT SUM(p_sub.presente) FROM presencas p_sub WHERE p_sub.matricula_id = m.id) as total_presencas,
             (SELECT p_hoje.presente FROM presencas p_hoje WHERE p_hoje.matricula_id = m.id AND p_hoje.data_aula = ?) as presente_hoje,
             (SELECT p_hoje.fez_atividade FROM presencas p_hoje WHERE p_hoje.matricula_id = m.id AND p_hoje.data_aula = ?) as fez_atividade_hoje
         FROM matriculas m
         JOIN alunos a ON m.aluno_id = a.id
+        LEFT JOIN turmas t ON a.turma_id = t.id -- JOIN com turmas
         JOIN disciplinas d ON m.disciplina_id = d.id
         WHERE m.disciplina_id = ? AND m.status = 'cursando'
         ORDER BY a.nome
@@ -1216,7 +914,7 @@ def presenca_chamada():
                            data_aula=data_aula,
                            alunos=alunos_matriculados,
                            tem_atividades=tem_atividades,
-                           faixa_etaria=faixa_etaria) # Passar faixa_etaria
+                           faixa_etaria=faixa_etaria)
 
 
 def _atualizar_status_matricula(matricula_id, conn):
@@ -1226,12 +924,12 @@ def _atualizar_status_matricula(matricula_id, conn):
     cursor.execute("""
         SELECT
             m.nota1, m.nota2, m.nota_final, m.data_conclusao,
-            m.participacao, m.desafio, m.prova, -- NOVAS COLUNAS
+            m.participacao, m.desafio, m.prova,
             d.nota_minima, d.frequencia_minima,
             t.faixa_etaria
         FROM matriculas m
         JOIN alunos a ON m.aluno_id = a.id
-        JOIN turmas t ON a.turma_id = t.id
+        LEFT JOIN turmas t ON a.turma_id = t.id -- LEFT JOIN para turmas
         JOIN disciplinas d ON m.disciplina_id = d.id
         WHERE m.id = ?
     """, (matricula_id,))
@@ -1247,39 +945,37 @@ def _atualizar_status_matricula(matricula_id, conn):
 
     nota1 = matricula_data['nota1']
     nota2 = matricula_data['nota2']
-    nota_final = matricula_data['nota_final']
     participacao = matricula_data['participacao']
     desafio = matricula_data['desafio']
     prova = matricula_data['prova']
 
-    # Recalcular nota_final e nota1 (para adolescentes/jovens)
-    if faixa_etaria == 'adolescentes_jovens':
-        if participacao is not None and desafio is not None and prova is not None:
-            nota1 = (participacao or 0) + (desafio or 0) + (prova or 0)
-            nota_final = nota1
-        else:
-            nota1 = None
-            nota_final = None
-        nota2 = None # Garante que N2 é nulo para adolescentes/jovens
-    elif faixa_etaria == 'adultos':
-        if nota1 is not None and nota2 is not None:
-            nota_final = (nota1 + nota2) / 2
-        elif nota1 is not None:
-            nota_final = nota1
-        elif nota2 is not None:
-            nota_final = nota2
-        else:
-            nota_final = None
-        participacao = None # Garante que são nulos para adultos
-        desafio = None
-        prova = None
-    else: # Criancas
-        nota1 = None
-        nota2 = None
-        nota_final = None
-        participacao = None
-        desafio = None
-        prova = None
+    # Recalcular nota1, nota2, nota_final com base na faixa etária
+    new_nota1 = None
+    new_nota2 = None
+    new_nota_final = None
+    new_participacao = None
+    new_desafio = None
+    new_prova = None
+
+    if faixa_etaria == 'criancas':
+        # Não há notas para crianças
+        pass
+    elif faixa_etaria == 'adolescentes_jovens':
+        new_participacao = participacao
+        new_desafio = desafio
+        new_prova = prova
+        if new_participacao is not None and new_desafio is not None and new_prova is not None:
+            new_nota1 = (new_participacao or 0) + (new_desafio or 0) + (new_prova or 0)
+            new_nota_final = new_nota1
+    else: # Adultos
+        new_nota1 = nota1
+        new_nota2 = nota2
+        if new_nota1 is not None and new_nota2 is not None:
+            new_nota_final = (new_nota1 + new_nota2) / 2
+        elif new_nota1 is not None:
+            new_nota_final = new_nota1 # Se só tem N1, a final é N1
+        elif new_nota2 is not None:
+            new_nota_final = new_nota2 # Se só tem N2, a final é N2
 
     # Calcular frequência
     cursor.execute("""
@@ -1306,13 +1002,13 @@ def _atualizar_status_matricula(matricula_id, conn):
             else:
                 new_status = 'reprovado'
         elif faixa_etaria == 'adolescentes_jovens':
-            if nota_final is not None and nota_final >= nota_minima and \
+            if new_nota_final is not None and new_nota_final >= nota_minima and \
                frequencia_percentual >= frequencia_minima:
                 new_status = 'aprovado'
             else:
                 new_status = 'reprovado'
         else: # Adultos
-            if nota_final is not None and nota_final >= nota_minima and \
+            if new_nota_final is not None and new_nota_final >= nota_minima and \
                frequencia_percentual >= frequencia_minima:
                 new_status = 'aprovado'
             else:
@@ -1324,8 +1020,8 @@ def _atualizar_status_matricula(matricula_id, conn):
         SET nota1 = ?, nota2 = ?, nota_final = ?, status = ?,
             participacao = ?, desafio = ?, prova = ?
         WHERE id = ?
-    """, (nota1, nota2, nota_final, new_status,
-          participacao, desafio, prova, matricula_id))
+    """, (new_nota1, new_nota2, new_nota_final, new_status,
+          new_participacao, new_desafio, new_prova, matricula_id))
 
 # ══════════════════════════════════════
 # RELATORIOS
@@ -1364,9 +1060,9 @@ def get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro, conn
             d.nome  as disciplina,
             d.nota_minima,
             d.frequencia_minima,
-            t.faixa_etaria, -- Adicionado faixa_etaria
+            t.faixa_etaria,
             m.nota1, m.nota2, m.nota_final,
-            m.participacao, m.desafio, m.prova, -- NOVAS COLUNAS
+            m.participacao, m.desafio, m.prova,
             m.status,
             m.data_inicio,
             m.data_conclusao,
@@ -1375,7 +1071,7 @@ def get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro, conn
             (SELECT SUM(p_sub.fez_atividade) FROM presencas p_sub WHERE p_sub.matricula_id = m.id) as atividades
         FROM matriculas m
         JOIN alunos      a ON m.aluno_id      = a.id
-        LEFT JOIN turmas t ON a.turma_id      = t.id -- JOIN com turmas
+        LEFT JOIN turmas t ON a.turma_id      = t.id
         JOIN disciplinas d ON m.disciplina_id = d.id
         WHERE 1=1
     """
@@ -1423,7 +1119,7 @@ def download_relatorio_pdf():
     # Filtros aplicados
     filter_text = "Filtros: "
     if disciplina_id:
-        conn = conectar() # Nova conexão para buscar nome da disciplina
+        conn = conectar()
         cursor = conn.cursor()
         cursor.execute("SELECT nome FROM disciplinas WHERE id = ?", (disciplina_id,))
         disc_nome = cursor.fetchone()['nome']
@@ -1526,7 +1222,7 @@ def download_relatorio_doc():
     # Filtros aplicados
     filter_text = "Filtros: "
     if disciplina_id:
-        conn = conectar() # Nova conexão para buscar nome da disciplina
+        conn = conectar()
         cursor = conn.cursor()
         cursor.execute("SELECT nome FROM disciplinas WHERE id = ?", (disciplina_id,))
         disc_nome = cursor.fetchone()['nome']
@@ -1593,4 +1289,98 @@ def download_relatorio_doc():
             # Centralizar todas as células, exceto a primeira (Aluno)
             for i in range(1, len(headers)):
                 row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            row_cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
 
+    else:
+        document.add_paragraph("Nenhum relatório encontrado com os filtros aplicados.")
+
+    buffer = BytesIO()
+    document.save(buffer)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name="relatorio_matriculas.docx", mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+# ══════════════════════════════════════
+# USUARIOS
+# ══════════════════════════════════════
+@app.route("/usuarios")
+@login_required
+def usuarios():
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM usuarios ORDER BY nome")
+    lista = cursor.fetchall()
+    conn.close()
+    return render_template("usuarios.html", usuarios=lista)
+
+
+@app.route("/usuarios/novo", methods=["GET", "POST"])
+@login_required
+def novo_usuario():
+    if request.method == "POST":
+        nome   = request.form.get("nome", "").strip()
+        email  = request.form.get("email", "").strip()
+        senha  = request.form.get("senha", "")
+        perfil = request.form.get("perfil", "usuario")
+        if not nome or not email or not senha:
+            flash("Todos os campos sao obrigatorios!", "erro")
+            return redirect(url_for("novo_usuario"))
+        conn   = conectar()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO usuarios (nome,email,senha_hash,perfil)
+                VALUES (?,?,?,?)
+            """, (nome, email,
+                  generate_password_hash(senha), perfil))
+            conn.commit()
+            flash(f"Usuario '{nome}' criado!", "sucesso")
+        except sqlite3.IntegrityError as e:
+            if "usuarios.email" in str(e):
+                flash("Este e-mail já está cadastrado para outro usuário!", "erro")
+            else:
+                flash(f"Erro de integridade ao cadastrar usuário: {e}", "erro")
+        except Exception as e:
+            flash(f"Erro inesperado ao cadastrar usuário: {e}", "erro")
+        finally:
+            conn.close()
+        return redirect(url_for("usuarios"))
+    return render_template("novo_usuario.html")
+
+
+@app.route("/minha-conta", methods=["GET", "POST"])
+@login_required
+def minha_conta():
+    if request.method == "POST":
+        senha_atual = request.form.get("senha_atual", "")
+        nova_senha  = request.form.get("nova_senha", "")
+        confirmar   = request.form.get("confirmar", "")
+        u = verificar_login(current_user.email, senha_atual)
+        if not u:
+            flash("Senha atual incorreta!", "erro")
+            return redirect(url_for("minha_conta"))
+        if nova_senha != confirmar:
+            flash("As senhas nao coincidem!", "erro")
+            return redirect(url_for("minha_conta"))
+        if len(nova_senha) < 6:
+            flash("Minimo 6 caracteres!", "erro")
+            return redirect(url_for("minha_conta"))
+        conn   = conectar()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "UPDATE usuarios SET senha_hash=? WHERE id=?",
+                (generate_password_hash(nova_senha), current_user.id))
+            conn.commit()
+            flash("Senha alterada com sucesso!", "sucesso")
+        except Exception as e:
+            flash(f"Erro ao alterar senha: {e}", "erro")
+        finally:
+            conn.close()
+        return redirect(url_for("index"))
+    return render_template("minha_conta.html")
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)

@@ -2,92 +2,116 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">✏️ Editar Matrícula e Notas</h4>
-    <a href="/matriculas" class="btn btn-outline-secondary">← Voltar</a>
+    <h4 class="fw-bold mb-0">
+        ✏️ Editar Matrícula: {{ matricula['aluno_nome'] }} em {{ matricula['disciplina_nome'] }}
+    </h4>
+    <a href="/matriculas" class="btn btn-outline-secondary">← Voltar às Matrículas</a>
 </div>
 
-<div class="card shadow-sm" style="max-width:500px">
-    <div class="card-header fw-semibold">
-        Matrícula de {{ matricula['aluno_nome'] }} em {{ matricula['disciplina_nome'] }}
-    </div>
+<div class="card shadow-sm" style="max-width: 700px;">
     <div class="card-body">
         <form method="POST">
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Aluno</label>
-                <input type="text" class="form-control"
-                       value="{{ matricula['aluno_nome'] }}" readonly>
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Disciplina</label>
-                <input type="text" class="form-control"
-                       value="{{ matricula['disciplina_nome'] }}" readonly>
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-6">
-                    <label class="form-label fw-semibold">Nota 1</label>
-                    <input type="number" name="nota1"
-                           class="form-control" step="0.5" min="0" max="10"
-                           value="{{ matricula['nota1'] if matricula['nota1'] is not none else '' }}">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Aluno</label>
+                    <input type="text" class="form-control" value="{{ matricula['aluno_nome'] }}" disabled>
                 </div>
-                <div class="col-6">
-                    <label class="form-label fw-semibold">Nota 2</label>
-                    <input type="number" name="nota2"
-                           class="form-control" step="0.5" min="0" max="10"
-                           value="{{ matricula['nota2'] if matricula['nota2'] is not none else '' }}">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Disciplina</label>
+                    <input type="text" class="form-control" value="{{ matricula['disciplina_nome'] }}" disabled>
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Média Final</label>
-                <input type="number" name="nota_final"
-                       class="form-control" step="0.5" min="0" max="10"
-                       value="{{ matricula['nota_final'] if matricula['nota_final'] is not none else '' }}"
-                       placeholder="Calculado automaticamente se N1 e N2 preenchidas">
-                <div class="form-text">
-                    A média será calculada automaticamente se N1 e N2 forem preenchidas.
-                    Você pode sobrescrever se necessário.
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="data_inicio" class="form-label fw-semibold">Data de Início</label>
+                    <input type="date" name="data_inicio" id="data_inicio" class="form-control"
+                           value="{{ matricula['data_inicio'] or '' }}" required>
                 </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Frequência</label>
-                <input type="text" class="form-control" readonly
-                       value="{% if total_aulas > 0 %}{{ frequencia_percentual|round(1) }}% ({{ presencas }}/{{ total_aulas }} aulas){% else %}Sem aulas registradas{% endif %}">
-                <div class="form-text">
-                    Mínima exigida: {{ matricula['frequencia_minima']|round(1) }}%
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Status</label>
-                <input type="text" name="status" class="form-control" readonly
-                       value="{% if matricula['status'] == 'aprovado' %}✅ Aprovado
-                              {% elif matricula['status'] == 'reprovado' %}❌ Reprovado
-                              {% else %}📖 Cursando{% endif %}">
-                <div class="form-text">
-                    Status é calculado automaticamente com base nas notas e frequência.
-                </div>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-6">
-                    <label class="form-label fw-semibold">Data de Início</label>
-                    <input type="date" name="data_inicio"
-                           class="form-control"
-                           value="{{ matricula['data_inicio'] or '' }}">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-semibold">Data de Conclusão</label>
-                    <input type="date" name="data_conclusao"
-                           class="form-control"
+                <div class="col-md-6">
+                    <label for="data_conclusao" class="form-label fw-semibold">Data de Conclusão (Opcional)</label>
+                    <input type="date" name="data_conclusao" id="data_conclusao" class="form-control"
                            value="{{ matricula['data_conclusao'] or '' }}">
                 </div>
             </div>
 
+            <hr>
+
+            <h5 class="fw-bold mb-3">Avaliação</h5>
+
+            {% if matricula['faixa_etaria'] == 'criancas' %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Turma de Crianças: Não há registro de notas. O status é baseado apenas na frequência.
+                </div>
+                <input type="hidden" name="nota1" value="">
+                <input type="hidden" name="nota2" value="">
+                <input type="hidden" name="participacao" value="">
+                <input type="hidden" name="desafio" value="">
+                <input type="hidden" name="prova" value="">
+            {% elif matricula['faixa_etaria'] == 'adolescentes_jovens' %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Turma de Adolescentes/Jovens: A Nota 1 é composta por Participação (1), Desafio (1) e Prova (8).
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="participacao" class="form-label fw-semibold">Participação (1 ponto)</label>
+                        <input type="number" step="0.1" min="0" max="1" name="participacao" id="participacao"
+                               class="form-control" value="{{ matricula['participacao'] or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="desafio" class="form-label fw-semibold">Desafio (1 ponto)</label>
+                        <input type="number" step="0.1" min="0" max="1" name="desafio" id="desafio"
+                               class="form-control" value="{{ matricula['desafio'] or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="prova" class="form-label fw-semibold">Prova (8 pontos)</label>
+                        <input type="number" step="0.1" min="0" max="8" name="prova" id="prova"
+                               class="form-control" value="{{ matricula['prova'] or '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nota 1 (Calculada)</label>
+                    <input type="text" class="form-control"
+                           value="{% if matricula['nota1'] is not none %}{{ matricula['nota1']|round(1) }}{% else %}—{% endif %}" disabled>
+                </div>
+                <input type="hidden" name="nota1" value="{{ matricula['nota1'] or '' }}"> {# Hidden para manter o valor #}
+                <input type="hidden" name="nota2" value="">
+            {% else %} {# Adultos #}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nota1" class="form-label fw-semibold">Nota 1</label>
+                        <input type="number" step="0.1" min="0" max="10" name="nota1" id="nota1"
+                               class="form-control" value="{{ matricula['nota1'] or '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="nota2" class="form-label fw-semibold">Nota 2</label>
+                        <input type="number" step="0.1" min="0" max="10" name="nota2" id="nota2"
+                               class="form-control" value="{{ matricula['nota2'] or '' }}">
+                    </div>
+                </div>
+                <input type="hidden" name="participacao" value="">
+                <input type="hidden" name="desafio" value="">
+                <input type="hidden" name="prova" value="">
+            {% endif %}
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Média Final</label>
+                    <input type="text" class="form-control"
+                           value="{% if matricula['nota_final'] is not none %}{{ matricula['nota_final']|round(1) }}{% else %}—{% endif %}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Status</label>
+                    <input type="text" class="form-control"
+                           value="{% if matricula['status'] %}{{ matricula['status']|capitalize }}{% else %}—{% endif %}" disabled>
+                </div>
+            </div>
+
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-warning px-4">
-                    💾 Salvar Alterações
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save-fill me-2"></i> Salvar Alterações
                 </button>
                 <a href="/matriculas" class="btn btn-outline-secondary">
                     Cancelar
