@@ -1,12 +1,24 @@
 import os
 from datetime import date
 from flask import (Flask, render_template, request,
-                   redirect, url_for, flash)
+                   redirect, url_for, flash, send_file) # Adicionado send_file
 from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
 from werkzeug.security import generate_password_hash
 from database import conectar, inicializar_banco
 from auth import carregar_usuario, verificar_login
+
+# Importações para PDF e DOC
+from io import BytesIO
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from docx import Document
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn # Para definir o idioma do documento Word
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "escola_biblica_2026")
@@ -265,7 +277,7 @@ def trilha(id):
             d.nome            as disciplina,
             d.duracao_semanas,
             d.nota_minima,
-            d.frequencia_minima, -- Adicionado aqui
+            d.frequencia_minima,
             m.id              as mat_id,
             m.nota1, m.nota2, m.nota_final,
             m.status,
@@ -566,7 +578,9 @@ def editar_matricula(id):
             """, (disciplina_id_mat,))
             freq_data = cursor.fetchone()
             if freq_data and freq_data['total_aulas'] > 0:
-                frequencia_percentual = (freq_data['presencas'] / freq_data['total_aulas']) * 100
+                total_aulas_registradas = freq_data['total_aulas']
+                presencas_registradas = freq_data['presencas']
+                frequencia_percentual = (presencas_registradas / total_aulas_registradas) * 100
 
         # 3. Determinar Status (Aprovado/Reprovado/Cursando)
         status = 'cursando' # Default
@@ -780,7 +794,7 @@ def relatorios():
             a.nome  as aluno,
             d.nome  as disciplina,
             d.nota_minima,
-            d.frequencia_minima, -- Adicionado aqui para o cálculo de status
+            d.frequencia_minima,
             m.nota1, m.nota2, m.nota_final,
             m.status,
             m.data_inicio,
@@ -833,6 +847,254 @@ def relatorios():
         selected_data_inicio=data_inicio,
         selected_data_fim=data_fim,
         selected_status=status_filtro)
+
+
+# ══════════════════════════════════════
+# DOWNLOAD DE RELATORIOS
+# ══════════════════════════════════════
+
+def get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro):
+    """Função auxiliar para obter os dados do relatório com base nos filtros."""
+    conn = conectar()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT
+            a.nome  as aluno,
+            d.nome  as disciplina,
+            d.nota_minima,
+            d.frequencia_minima,
+            m.nota1, m.nota2, m.nota_final,
+            m.status,
+            m.data_inicio,
+            m.data_conclusao,
+            COUNT(p.id)      as total_aulas,
+            SUM(p.presente)  as presencas,
+            SUM(p.fez_atividade) as atividades
+        FROM matriculas m
+        JOIN alunos      a ON m.aluno_id      = a.id
+        JOIN disciplinas d ON m.disciplina_id = d.id
+        LEFT JOIN presencas p ON p.matricula_id = m.id
+        WHERE 1=1
+    """
+    params = []
+
+    if disciplina_id:
+        query += " AND d.id = ?"
+        params.append(disciplina_id)
+
+    if data_inicio:
+        query += " AND m.data_inicio >= ?"
+        params.append(data_inicio)
+
+    if data_fim:
+        query += " AND m.data_conclusao <= ?"
+        params.append(data_fim)
+
+    if status_filtro and status_filtro != 'todos':
+        query += " AND m.status = ?"
+        params.append(status_filtro)
+
+    query += """
+        GROUP BY m.id
+        ORDER BY a.nome, d.nome
+    """
+
+    cursor.execute(query, tuple(params))
+    dados = cursor.fetchall()
+    conn.close()
+    return dados
+
+@app.route("/relatorios/download/pdf")
+@login_required
+def download_relatorio_pdf():
+    disciplina_id = request.args.get("disciplina_id")
+    data_inicio   = request.args.get("data_inicio")
+    data_fim      = request.args.get("data_fim")
+    status_filtro = request.args.get("status_filtro")
+
+    dados = get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro)
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4),
+                            rightMargin=30, leftMargin=30,
+                            topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Título
+    elements.append(Paragraph("Relatório de Matrículas", styles['h1']))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    # Filtros aplicados
+    filter_text = "Filtros: "
+    if disciplina_id:
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT nome FROM disciplinas WHERE id = ?", (disciplina_id,))
+        disc_nome = cursor.fetchone()['nome']
+        conn.close()
+        filter_text += f"Disciplina: {disc_nome}; "
+    if data_inicio:
+        filter_text += f"Início: {data_inicio}; "
+    if data_fim:
+        filter_text += f"Fim: {data_fim}; "
+    if status_filtro and status_filtro != 'todos':
+        filter_text += f"Status: {status_filtro.capitalize()}; "
+    if filter_text == "Filtros: ":
+        filter_text += "Nenhum"
+    elements.append(Paragraph(filter_text, styles['Normal']))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    # Dados da tabela
+    if dados:
+        table_data = []
+        # Cabeçalho
+        table_data.append([
+            "Aluno", "Disciplina", "Início", "Conclusão",
+            "Média", "Status", "Frequência", "Atividades"
+        ])
+
+        for item in dados:
+            freq_val = "—"
+            if item['total_aulas'] and item['total_aulas'] > 0:
+                freq = ((item['presencas'] or 0) / item['total_aulas'] * 100)
+                freq_val = f"{freq:.1f}% ({item['presencas'] or 0}/{item['total_aulas']})"
+
+            media_val = "—"
+            if item['nota_final'] is not None:
+                media_val = f"{item['nota_final']:.1f}"
+
+            status_val = item['status'].capitalize() if item['status'] else "—"
+
+            table_data.append([
+                item['aluno'],
+                item['disciplina'],
+                item['data_inicio'] or "—",
+                item['data_conclusao'] or "Em andamento",
+                media_val,
+                status_val,
+                freq_val,
+                item['atividades'] or "—"
+            ])
+
+        table = Table(table_data, colWidths=[1.5*inch, 1.5*inch, 0.8*inch, 1.0*inch, 0.8*inch, 0.8*inch, 1.2*inch, 0.8*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#212529')), # Dark header
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'), # Aluno à esquerda
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')), # Light gray grid
+            ('LEFTPADDING', (0,0), (-1,-1), 6),
+            ('RIGHTPADDING', (0,0), (-1,-1), 6),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        elements.append(table)
+    else:
+        elements.append(Paragraph("Nenhum relatório encontrado com os filtros aplicados.", styles['Normal']))
+
+    doc.build(buffer)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name="relatorio_matriculas.pdf", mimetype="application/pdf")
+
+
+@app.route("/relatorios/download/doc")
+@login_required
+def download_relatorio_doc():
+    disciplina_id = request.args.get("disciplina_id")
+    data_inicio   = request.args.get("data_inicio")
+    data_fim      = request.args.get("data_fim")
+    status_filtro = request.args.get("status_filtro")
+
+    dados = get_relatorio_data(disciplina_id, data_inicio, data_fim, status_filtro)
+
+    document = Document()
+    # Definir idioma para português
+    document.settings.element.xpath('//w:settings')[0].append(
+        qn('w:lang', val='pt-BR')
+    )
+
+    # Título
+    document.add_heading('Relatório de Matrículas', level=1)
+
+    # Filtros aplicados
+    filter_text = "Filtros: "
+    if disciplina_id:
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT nome FROM disciplinas WHERE id = ?", (disciplina_id,))
+        disc_nome = cursor.fetchone()['nome']
+        conn.close()
+        filter_text += f"Disciplina: {disc_nome}; "
+    if data_inicio:
+        filter_text += f"Início: {data_inicio}; "
+    if data_fim:
+        filter_text += f"Fim: {data_fim}; "
+    if status_filtro and status_filtro != 'todos':
+        filter_text += f"Status: {status_filtro.capitalize()}; "
+    if filter_text == "Filtros: ":
+        filter_text += "Nenhum"
+    document.add_paragraph(filter_text)
+    document.add_paragraph() # Espaço
+
+    # Dados da tabela
+    if dados:
+        # Cabeçalho
+        headers = [
+            "Aluno", "Disciplina", "Início", "Conclusão",
+            "Média", "Status", "Frequência", "Atividades"
+        ]
+        table = document.add_table(rows=1, cols=len(headers))
+        table.style = 'Table Grid' # Estilo de tabela com bordas
+        hdr_cells = table.rows[0].cells
+        for i, header in enumerate(headers):
+            p = hdr_cells[i].paragraphs[0]
+            p.text = header
+            p.runs[0].bold = True
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            hdr_cells[i].width = Inches(1.0) # Largura padrão, pode ajustar
+
+        # Linhas de dados
+        for item in dados:
+            row_cells = table.add_row().cells
+
+            freq_val = "—"
+            if item['total_aulas'] and item['total_aulas'] > 0:
+                freq = ((item['presencas'] or 0) / item['total_aulas'] * 100)
+                freq_val = f"{freq:.1f}% ({item['presencas'] or 0}/{item['total_aulas']})"
+
+            media_val = "—"
+            if item['nota_final'] is not None:
+                media_val = f"{item['nota_final']:.1f}"
+
+            status_val = item['status'].capitalize() if item['status'] else "—"
+
+            row_cells[0].text = item['aluno']
+            row_cells[1].text = item['disciplina']
+            row_cells[2].text = item['data_inicio'] or "—"
+            row_cells[3].text = item['data_conclusao'] or "Em andamento"
+            row_cells[4].text = media_val
+            row_cells[5].text = status_val
+            row_cells[6].text = freq_val
+            row_cells[7].text = item['atividades'] or "—"
+
+            # Centralizar todas as células, exceto a primeira (Aluno)
+            for i in range(1, len(headers)):
+                row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            row_cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT # Aluno à esquerda
+
+    else:
+        document.add_paragraph("Nenhum relatório encontrado com os filtros aplicados.")
+
+    buffer = BytesIO()
+    document.save(buffer)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name="relatorio_matriculas.docx", mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
 
 # ══════════════════════════════════════

@@ -12,7 +12,7 @@
         Filtrar Relatórios
     </div>
     <div class="card-body">
-        <form action="/relatorios" method="GET" class="row g-3 align-items-end">
+        <form id="filterForm" action="/relatorios" method="GET" class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label for="disciplina_id" class="form-label small text-muted">Disciplina</label>
                 <select name="disciplina_id" id="disciplina_id" class="form-select">
@@ -54,6 +54,16 @@
             </div>
         </form>
     </div>
+</div>
+
+<!-- Botões de Download -->
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <button type="button" class="btn btn-danger" onclick="downloadRelatorio('pdf')">
+        <i class="bi bi-file-earmark-pdf-fill me-2"></i> Download PDF
+    </button>
+    <button type="button" class="btn btn-info text-white" onclick="downloadRelatorio('doc')">
+        <i class="bi bi-file-earmark-word-fill me-2"></i> Download DOC
+    </button>
 </div>
 
 <!-- Tabela de Resultados -->
@@ -115,7 +125,7 @@
                         {% if item['total_aulas'] and item['total_aulas'] > 0 %}
                         {% set freq = ((item['presencas'] or 0) / item['total_aulas'] * 100)|round(1) %}
                         <span class="fw-bold
-                            {% if freq >= 75 %}text-success
+                            {% if freq >= item['frequencia_minima'] %}text-success
                             {% else %}text-danger{% endif %}">
                             {{ freq }}%
                         </span>
@@ -148,5 +158,28 @@
         Total de registros: {{ dados|length }}
     </div>
 </div>
+
+<script>
+function downloadRelatorio(format) {
+    const form = document.getElementById('filterForm');
+    const disciplinaId = form.elements['disciplina_id'].value;
+    const dataInicio = form.elements['data_inicio'].value;
+    const dataFim = form.elements['data_fim'].value;
+    const statusFiltro = form.elements['status_filtro'].value;
+
+    let url = `/relatorios/download/${format}?`;
+    if (disciplinaId) url += `disciplina_id=${disciplinaId}&`;
+    if (dataInicio) url += `data_inicio=${dataInicio}&`;
+    if (dataFim) url += `data_fim=${dataFim}&`;
+    if (statusFiltro) url += `status_filtro=${statusFiltro}&`;
+
+    // Remove o '&' final se houver
+    if (url.endsWith('&')) {
+        url = url.slice(0, -1);
+    }
+
+    window.open(url, '_blank');
+}
+</script>
 
 {% endblock %}
