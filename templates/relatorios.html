@@ -19,19 +19,19 @@
                     <option value="">Todas as Disciplinas</option>
                     {% for disc in disciplinas %}
                     <option value="{{ disc['id'] }}"
-                        {% if selected_disciplina == disc['id']|string %}selected{% endif %}>
+                        {% if selected_disciplina == disc['id'] %}selected{% endif %}>
                         {{ disc['nome'] }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="data_inicio" class="form-label small text-muted">Data Início (Matrícula)</label>
+                <label for="data_inicio" class="form-label small text-muted">Data Início</label>
                 <input type="date" name="data_inicio" id="data_inicio" class="form-control"
                        value="{{ selected_data_inicio or '' }}">
             </div>
             <div class="col-md-3">
-                <label for="data_fim" class="form-label small text-muted">Data Fim (Conclusão)</label>
+                <label for="data_fim" class="form-label small text-muted">Data Fim</label>
                 <input type="date" name="data_fim" id="data_fim" class="form-control"
                        value="{{ selected_data_fim or '' }}">
             </div>
@@ -39,9 +39,9 @@
                 <label for="status_filtro" class="form-label small text-muted">Status</label>
                 <select name="status_filtro" id="status_filtro" class="form-select">
                     <option value="todos" {% if selected_status == 'todos' %}selected{% endif %}>Todos</option>
-                    <option value="aprovados" {% if selected_status == 'aprovados' %}selected{% endif %}>Aprovados</option>
-                    <option value="reprovados" {% if selected_status == 'reprovados' %}selected{% endif %}>Reprovados</option>
                     <option value="cursando" {% if selected_status == 'cursando' %}selected{% endif %}>Cursando</option>
+                    <option value="aprovado" {% if selected_status == 'aprovado' %}selected{% endif %}>Aprovado</option>
+                    <option value="reprovado" {% if selected_status == 'reprovado' %}selected{% endif %}>Reprovado</option>
                 </select>
             </div>
             <div class="col-12 d-flex gap-2">
@@ -101,16 +101,25 @@
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        {% if item['nota_final'] is not none %}
-                            <span class="fw-bold
-                                {% if item['nota_final'] >= item['nota_minima'] %}
-                                    text-success
-                                {% else %}
-                                    text-danger
-                                {% endif %}">
-                                {{ item['nota_final']|round(1) }}
-                            </span>
-                        {% else %}—{% endif %}
+                        {% if item['faixa_etaria'] and item['faixa_etaria'].startswith('criancas') %}
+                            <span class="text-muted">N/A</span>
+                        {% elif item['faixa_etaria'] and (item['faixa_etaria'].startswith('adolescentes') or item['faixa_etaria'].startswith('jovens')) %}
+                            {% if item['nota1'] is not none %}
+                                <span class="fw-bold
+                                    {% if item['nota1'] >= item['nota_minima'] %}text-success
+                                    {% else %}text-danger{% endif %}">
+                                    {{ item['nota1']|round(1) }}
+                                </span>
+                            {% else %}—{% endif %}
+                        {% else %} {# Adultos #}
+                            {% if item['nota_final'] is not none %}
+                                <span class="fw-bold
+                                    {% if item['nota_final'] >= item['nota_minima'] %}text-success
+                                    {% else %}text-danger{% endif %}">
+                                    {{ item['nota_final']|round(1) }}
+                                </span>
+                            {% else %}—{% endif %}
+                        {% endif %}
                     </td>
                     <td class="text-center">
                         {% if item['status'] == 'aprovado' %}

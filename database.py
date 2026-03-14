@@ -29,7 +29,7 @@ def inicializar_banco():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL UNIQUE,
             descricao TEXT,
-            faixa_etaria TEXT, -- 'criancas', 'adolescentes_jovens', 'adultos'
+            faixa_etaria TEXT, -- 'criancas_4_7', 'criancas_8_12', 'adolescentes_13_15', 'jovens_16_17', 'adultos'
             ativa INTEGER DEFAULT 1
         )
     """)
@@ -38,20 +38,17 @@ def inicializar_banco():
     try:
         cursor.execute("ALTER TABLE alunos RENAME TO alunos_old")
     except sqlite3.OperationalError as e:
-        # Apenas ignora se a tabela não existe. Não re-lança o erro.
-        if "no such table" not in str(e):
-            raise e # Re-lança outros erros inesperados
-    except Exception as e:
-        # Captura qualquer outro erro inesperado durante o rename
-        print(f"Aviso: Erro ao tentar renomear tabela 'alunos': {e}")
-
+        if "no such table" not in str(e) and "already exists" not in str(e):
+            pass
+        else:
+            raise e
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
             telefone TEXT,
-            email TEXT, -- Removido UNIQUE
+            email TEXT,
             data_nascimento TEXT,
             membro_igreja INTEGER DEFAULT 0,
             turma_id INTEGER,
@@ -59,9 +56,8 @@ def inicializar_banco():
         )
     """)
 
-    # Copiar os dados da tabela antiga para a nova, se a tabela antiga existir
     cursor.execute("PRAGMA table_info(alunos_old)")
-    if cursor.fetchone(): # Se alunos_old existe
+    if cursor.fetchone():
         cursor.execute("""
             INSERT INTO alunos (id, nome, telefone, email, data_nascimento, membro_igreja, turma_id)
             SELECT id, nome, telefone, email, data_nascimento, membro_igreja, turma_id
@@ -75,12 +71,10 @@ def inicializar_banco():
     try:
         cursor.execute("ALTER TABLE professores RENAME TO professores_old")
     except sqlite3.OperationalError as e:
-        # Apenas ignora se a tabela não existe. Não re-lança o erro.
-        if "no such table" not in str(e):
-            raise e # Re-lança outros erros inesperados
-    except Exception as e:
-        # Captura qualquer outro erro inesperado durante o rename
-        print(f"Aviso: Erro ao tentar renomear tabela 'professores': {e}")
+        if "no such table" not in str(e) and "already exists" not in str(e):
+            pass
+        else:
+            raise e
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS professores (
@@ -93,7 +87,7 @@ def inicializar_banco():
     """)
 
     cursor.execute("PRAGMA table_info(professores_old)")
-    if cursor.fetchone(): # Se professores_old existe
+    if cursor.fetchone():
         cursor.execute("""
             INSERT INTO professores (id, nome, telefone, email, especialidade)
             SELECT id, nome, telefone, email, especialidade
@@ -133,7 +127,7 @@ def inicializar_banco():
             participacao REAL,
             desafio REAL,
             prova REAL,
-            status TEXT DEFAULT 'cursando',
+            status TEXT DEFAULT 'cursando', -- 'cursando', 'aprovado', 'reprovado'
             UNIQUE(aluno_id, disciplina_id),
             FOREIGN KEY (aluno_id) REFERENCES alunos(id),
             FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id)
@@ -181,6 +175,31 @@ def inicializar_banco():
         cursor.execute("ALTER TABLE turmas ADD COLUMN faixa_etaria TEXT DEFAULT 'adultos'")
     except sqlite3.OperationalError:
         pass
+
+    # Lógica de migração para a coluna faixa_etaria na tabela turmas
+    # Mapeia valores antigos para os novos
+    try:
+        cursor.execute("SELECT id, faixa_etaria FROM turmas WHERE faixa_etaria IN ('criancas', 'adolescentes_jovens', 'adolescentes_jovens_13_17', 'adolescentes_13_14', 'jovens_16_17', 'adultos', 'adultos_18_mais')")
+        turmas_para_atualizar = cursor.fetchall()
+        for turma_id, old_faixa_etaria in turmas_para_atualizar:
+            new_faixa_etaria = old_faixa_etaria # Valor padrão se não houver mapeamento
+            if old_faixa_etaria == 'criancas':
+                new_faixa_etaria = 'criancas_8_12' # Define um padrão para crianças antigas
+            elif old_faixa_etaria == 'adolescentes_jovens' or old_faixa_etaria == 'adolescentes_jovens_13_17' or old_faixa_etaria == 'adolescentes_13_14':
+                new_faixa_etaria = 'adolescentes_13_15' # Mapeia para a nova categoria de adolescentes
+            elif old_faixa_etaria == 'jovens_16_17':
+                new_faixa_etaria = 'jovens_16_17' # Mantém jovens 16-17
+            elif old_faixa_etaria == 'adultos' or old_faixa_etaria == 'adultos_18_mais':
+                new_faixa_etaria = 'adultos' # Simplifica para 'adultos'
+
+            if new_faixa_etaria != old_faixa_etaria:
+                cursor.execute("UPDATE turmas SET faixa_etaria = ? WHERE id = ?", (new_faixa_etaria, turma_id))
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        print(f"Aviso: Erro ao migrar faixa_etaria em turmas (pode ser a primeira inicialização): {e}")
+    except Exception as e:
+        print(f"Erro inesperado durante a migração de faixa_etaria: {e}")
+
 
     # Colunas para matriculas
     try:

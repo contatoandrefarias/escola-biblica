@@ -27,9 +27,14 @@
                     <thead class="table-dark">
                         <tr>
                             <th>Aluno</th>
-                            <th class="text-center">N1</th>
-                            <th class="text-center">N2</th>
-                            <th class="text-center">Média</th>
+                            {% if faixa_etaria and (faixa_etaria.startswith('adolescentes') or faixa_etaria.startswith('jovens')) %}
+                                <th class="text-center">N1</th>
+                                <th class="text-center">Média</th>
+                            {% elif faixa_etaria == 'adultos' %}
+                                <th class="text-center">N1</th>
+                                <th class="text-center">N2</th>
+                                <th class="text-center">Média</th>
+                            {% endif %}
                             <th class="text-center">Status</th>
                             <th class="text-center">Frequência</th>
                             <th class="text-center">Presença</th>
@@ -43,31 +48,52 @@
                         {% for aluno in alunos %}
                         <tr>
                             <td class="fw-semibold">{{ aluno['aluno_nome'] }}</td>
-                            <td class="text-center">
-                                {% if aluno['nota1'] is not none %}
-                                    {{ aluno['nota1']|round(1) }}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if aluno['nota2'] is not none %}
-                                    {{ aluno['nota2']|round(1) }}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if aluno['nota_final'] is not none %}
-                                    <span class="fw-bold
-                                        {% if aluno['nota_final'] >= aluno['nota_minima'] %}text-success
-                                        {% else %}text-danger{% endif %}">
-                                        {{ aluno['nota_final']|round(1) }}
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
+                            {% if faixa_etaria and (faixa_etaria.startswith('adolescentes') or faixa_etaria.startswith('jovens')) %}
+                                <td class="text-center">
+                                    {% if aluno['nota1'] is not none %}
+                                        {{ aluno['nota1']|round(1) }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if aluno['nota_final'] is not none %}
+                                        <span class="fw-bold
+                                            {% if aluno['nota_final'] >= aluno['nota_minima'] %}text-success
+                                            {% else %}text-danger{% endif %}">
+                                            {{ aluno['nota_final']|round(1) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            {% elif faixa_etaria == 'adultos' %}
+                                <td class="text-center">
+                                    {% if aluno['nota1'] is not none %}
+                                        {{ aluno['nota1']|round(1) }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if aluno['nota2'] is not none %}
+                                        {{ aluno['nota2']|round(1) }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if aluno['nota_final'] is not none %}
+                                        <span class="fw-bold
+                                            {% if aluno['nota_final'] >= aluno['nota_minima'] %}text-success
+                                            {% else %}text-danger{% endif %}">
+                                            {{ aluno['nota_final']|round(1) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
                             <td class="text-center">
                                 {% if aluno['status'] == 'aprovado' %}
                                     <span class="badge bg-success">✅ Aprovado</span>
@@ -118,7 +144,7 @@
                         {% endfor %}
                         {% else %}
                         <tr>
-                            <td colspan="{% if tem_atividades %}8{% else %}7{% endif %}"
+                            <td colspan="{% if faixa_etaria and (faixa_etaria.startswith('adolescentes') or faixa_etaria.startswith('jovens')) %}7{% elif faixa_etaria == 'adultos' %}8{% else %}5{% endif %}"
                                 class="text-center py-5 text-muted">
                                 <div class="fs-1 mb-2">🤷‍♂️</div>
                                 Nenhum aluno matriculado nesta disciplina ou com status 'cursando'.
