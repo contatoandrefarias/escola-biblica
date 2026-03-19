@@ -1,55 +1,71 @@
 {% extends "base.html" %}
-{% block conteudo %}
 
+{% block title %}Professores{% endblock %}
+
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">👨‍🏫 Professores</h4>
-    <a href="/professores/novo" class="btn btn-primary">
-        ➕ Novo Professor
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-person-workspace me-2"></i> Professores
+    </h1>
+    {% if current_user.is_authenticated and current_user.perfil == 'admin' %}
+    <a href="{{ url_for('novo_usuario') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill me-2"></i> Adicionar Professor
     </a>
+    {% endif %}
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Nome</th>
-                    <th>Telefone</th>
-                    <th>E-mail</th>
-                    <th>Especialidade</th>
-                    <th class="text-center">Acoes</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if professores %}
-                {% for p in professores %}
-                <tr>
-                    <td class="fw-semibold">{{ p['nome'] }}</td>
-                    <td>{{ p['telefone'] or '—' }}</td>
-                    <td>{{ p['email'] or '—' }}</td>
-                    <td>{{ p['especialidade'] or '—' }}</td>
-                    <td class="text-center">
-                        <a href="/professores/{{ p['id'] }}/editar"
-                           class="btn btn-sm btn-warning">
-                            ✏️ Editar
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-                {% else %}
-                <tr>
-                    <td colspan="5"
-                        class="text-center py-5 text-muted">
-                        Nenhum professor cadastrado.
-                    </td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Lista de Professores</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if professores %}
+                    {% for professor in professores %}
+                    <tr>
+                        <td>{{ professor['id'] }}</td>
+                        <td>{{ professor['nome'] }}</td>
+                        <td>{{ professor['email'] }}</td>
+                        <td>
+                            {% if current_user.is_authenticated and current_user.perfil == 'admin' %}
+                            <a href="{{ url_for('editar_usuario', id=professor['id']) }}" class="btn btn-sm btn-info me-2" title="Editar">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <form action="{{ url_for('excluir_usuario', id=professor['id']) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este professor? Esta ação é irreversível.');">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted">Sem permissão</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <div class="fs-1 mb-2">🤷‍♂️</div>
+                            Nenhum professor cadastrado.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="card-footer text-muted small">
-        Total: {{ professores|length }} professor(es)
+        Total de professores: {{ professores|length }}
     </div>
 </div>
-
 {% endblock %}
