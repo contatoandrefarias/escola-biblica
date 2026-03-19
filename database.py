@@ -148,6 +148,7 @@ def inicializar_banco():
 
     conn.commit()
     conn.close()
+    print("Banco de dados inicializado/atualizado com sucesso!") # Adicionado para log
 
 if __name__ == '__main__':
     inicializar_banco()
