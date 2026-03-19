@@ -3,9 +3,9 @@
 
 {% if aluno %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">Trilha de Aprendizado: {{ aluno['nome'] }}</h4>
-    <a href="/alunos" class="btn btn-secondary">
-        <i class="bi bi-arrow-left-circle-fill me-2"></i> Voltar para Alunos
+    <h4 class="fw-bold mb-0">📊 Trilha de Aprendizado: {{ aluno['nome'] }}</h4>
+    <a href="{{ url_for('alunos') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-2"></i> Voltar para Alunos
     </a>
 </div>
 
@@ -17,33 +17,26 @@
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Nome:</strong> {{ aluno['nome'] }}</p>
-                <p><strong>E-mail:</strong> {{ aluno['email'] if aluno['email'] else 'N/A' }}</p>
-                <p><strong>Telefone:</strong> {{ aluno['telefone'] if aluno['telefone'] else 'N/A' }}</p>
+                <p><strong>Data de Nascimento:</strong> {{ aluno['data_nascimento'] or 'N/A' }}</p>
+                <p><strong>Telefone:</strong> {{ aluno['telefone'] or 'N/A' }}</p>
+                <p><strong>E-mail:</strong> {{ aluno['email'] or 'N/A' }}</p>
+                <p><strong>Membro da Igreja:</strong> {% if aluno['membro_igreja'] %}Sim{% else %}Não{% endif %}</p>
             </div>
             <div class="col-md-6">
-                <p><strong>Data de Nascimento:</strong> {{ aluno['data_nascimento']|replace('-', '/') if aluno['data_nascimento'] else 'N/A' }}</p>
-                <p><strong>Membro da Igreja:</strong>
-                    {% if aluno['membro_igreja'] %}
-                        <span class="badge bg-success">Sim</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Não</span>
-                    {% endif %}
-                </p>
-                <p><strong>Turma:</strong>
-                    {% if aluno['turma_nome'] %}
-                        {{ aluno['turma_nome'] }} ({{ aluno['faixa_etaria']|replace('_', ' ')|title }})
-                    {% else %}
-                        <span class="text-muted">Não atribuída</span>
-                    {% endif %}
-                </p>
+                <p><strong>Turma:</strong> {{ aluno['turma_nome'] or 'N/A' }}
+                    {% if aluno['faixa_etaria'] %}({{ aluno['faixa_etaria']|replace('_', ' ')|title }}){% endif %}</p>
+                <p><strong>Nome do Pai:</strong> {{ aluno['nome_pai'] or 'N/A' }}</p>
+                <p><strong>Nome da Mãe:</strong> {{ aluno['nome_mae'] or 'N/A' }}</p>
+                <p><strong>Endereço:</strong> {{ aluno['endereco'] or 'N/A' }}</p>
             </div>
         </div>
     </div>
 </div>
 
-<h5 class="fw-bold mb-3">Matrículas e Progresso</h5>
-
 <div class="card shadow-sm">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Matrículas em Disciplinas</h5>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
@@ -63,50 +56,32 @@
                     {% for matricula in matriculas %}
                     <tr>
                         <td>{{ matricula['disciplina_nome'] }}</td>
-                        <td class="text-center">{{ matricula['data_inicio']|replace('-', '/') if matricula['data_inicio'] else '—' }}</td>
+                        <td class="text-center">{{ matricula['data_inicio'] }}</td>
+                        <td class="text-center">{{ matricula['data_conclusao'] or 'Cursando' }}</td>
                         <td class="text-center">
-                            {% if matricula['data_conclusao'] %}
-                                {{ matricula['data_conclusao']|replace('-', '/') }}
+                            {% if matricula['media_display'] is not none and matricula['media_display'] != '—' %}
+                                {{ matricula['media_display'] }}
                             {% else %}
-                                <span class="text-warning">Em andamento</span>
+                                N/A
                             {% endif %}
                         </td>
+                        <td class="text-center">{{ matricula['frequencia_porcentagem']|round(1) }}%</td>
                         <td class="text-center">
-                            {% if matricula['media_display'] is not none and matricula['media_display'] != 'N/A' %}
-                                {% if matricula['media_final'] >= 7.0 %}
-                                    <span class="badge bg-success">{{ matricula['media_display'] }}</span>
-                                {% elif matricula['media_final'] >= 6.0 %}
-                                    <span class="badge bg-warning text-dark">{{ matricula['media_display'] }}</span>
-                                {% else %}
-                                    <span class="badge bg-danger">{{ matricula['media_display'] }}</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            {% if matricula['frequencia_porcentagem'] >= matricula['frequencia_minima'] %}
-                                <span class="badge bg-success">{{ matricula['frequencia_porcentagem']|round(1) }}%</span>
-                            {% else %}
-                                <span class="badge bg-danger">{{ matricula['frequencia_porcentagem']|round(1) }}%</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            {% if matricula['turma_faixa_etaria'] and matricula['turma_faixa_etaria'].startswith('criancas') %}
+                            {% if 'criancas' in aluno['faixa_etaria'] %}
                                 {% if matricula['status_frequencia'] == 'Aprovado' %}
-                                    <span class="badge bg-success">✅ Aprovado</span>
-                                {% elif matricula['status_frequencia'] == 'Reprovado' %}
-                                    <span class="badge bg-danger">❌ Reprovado</span>
+                                    <span class="badge bg-success">{{ matricula['status_frequencia'] }}</span>
                                 {% else %}
-                                    <span class="badge bg-primary">📖 Cursando</span>
+                                    <span class="badge bg-danger">{{ matricula['status_frequencia'] }}</span>
                                 {% endif %}
                             {% else %}
-                                {% if matricula['status'] == 'aprovado' %}
-                                    <span class="badge bg-success">✅ Aprovado</span>
-                                {% elif matricula['status'] == 'reprovado' %}
-                                    <span class="badge bg-danger">❌ Reprovado</span>
+                                {% if matricula['status_display'] == 'Aprovado' %}
+                                    <span class="badge bg-success">{{ matricula['status_display'] }}</span>
+                                {% elif 'Aprovado' in matricula['status_display'] %}
+                                    <span class="badge bg-warning text-dark">{{ matricula['status_display'] }}</span>
+                                {% elif matricula['status_display'] == 'Reprovado' %}
+                                    <span class="badge bg-danger">{{ matricula['status_display'] }}</span>
                                 {% else %}
-                                    <span class="badge bg-primary">📖 Cursando</span>
+                                    <span class="badge bg-info text-dark">{{ matricula['status_display'] }}</span>
                                 {% endif %}
                             {% endif %}
                         </td>
@@ -117,26 +92,34 @@
 
                             <!-- Modal de Detalhes da Matrícula -->
                             <div class="modal fade" id="detalhesMatriculaModal{{ matricula['matricula_id'] }}" tabindex="-1" aria-labelledby="detalhesMatriculaModalLabel{{ matricula['matricula_id'] }}" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-lg"> {# Aumentei o tamanho do modal #}
+                                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                                     <div class="modal-content">
-                                        <div class="modal-header bg-primary text-white">
+                                        <div class="modal-header bg-info text-white">
                                             <h5 class="modal-title" id="detalhesMatriculaModalLabel{{ matricula['matricula_id'] }}">Detalhes da Matrícula em {{ matricula['disciplina_nome'] }}</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <div class="modal-body text-start">
+                                        <div class="modal-body">
                                             <div class="row">
                                                 <div class="col-md-6">
+                                                    <h6>Informações da Matrícula:</h6>
+                                                    <p><strong>Aluno:</strong> {{ aluno['nome'] }}</p>
+                                                    <p><strong>Disciplina:</strong> {{ matricula['disciplina_nome'] }}</p>
+                                                    <p><strong>Início:</strong> {{ matricula['data_inicio'] }}</p>
+                                                    <p><strong>Conclusão:</strong> {{ matricula['data_conclusao'] or 'Cursando' }}</p>
+                                                    <p><strong>Status:</strong> {{ matricula['status_display'] }}</p>
+                                                    <hr>
                                                     <h6>Notas:</h6>
-                                                    {% if matricula['turma_faixa_etaria'] and matricula['turma_faixa_etaria'].startswith('criancas') %}
-                                                        <p class="text-muted">Não há registro de notas para esta faixa etária.</p>
-                                                    {% elif matricula['turma_faixa_etaria'] and (matricula['turma_faixa_etaria'].startswith('adolescentes') or matricula['turma_faixa_etaria'].startswith('jovens')) %}
+                                                    {% if 'criancas' in aluno['faixa_etaria'] %}
+                                                        <p>Não há registro de notas para esta faixa etária.</p>
+                                                        <p class="fw-bold">Média Final: N/A</p>
+                                                    {% elif 'adolescentes' in aluno['faixa_etaria'] or 'jovens' in aluno['faixa_etaria'] %}
                                                         <p><strong>Meditação (4 pts):</strong> {{ matricula['meditacao'] if matricula['meditacao'] is not none else '—' }}</p>
                                                         <p><strong>Versículos (4 pts):</strong> {{ matricula['versiculos'] if matricula['versiculos'] is not none else '—' }}</p>
                                                         <p><strong>Desafio (1 pt):</strong> {{ matricula['desafio_nota'] if matricula['desafio_nota'] is not none else '—' }}</p>
                                                         <p><strong>Visitante (1 pt):</strong> {{ matricula['visitante'] if matricula['visitante'] is not none else '—' }}</p>
                                                         <p class="fw-bold">Média Final: {{ matricula['media_display'] }}</p>
                                                     {% else %} {# Adultos #}
-                                                        <p><strong>Nota 1 (Participação, Desafio, Prova):</strong> {{ matricula['nota1'] if matricula['nota1'] is not none else '—' }}</p>
+                                                        <p><strong>Nota 1:</strong> {{ matricula['nota1'] if matricula['nota1'] is not none else '—' }}</p>
                                                         <p><strong>Participação (1 pt):</strong> {{ matricula['participacao'] if matricula['participacao'] is not none else '—' }}</p>
                                                         <p><strong>Desafio (1 pt):</strong> {{ matricula['desafio'] if matricula['desafio'] is not none else '—' }}</p>
                                                         <p><strong>Prova (8 pts):</strong> {{ matricula['prova'] if matricula['prova'] is not none else '—' }}</p>

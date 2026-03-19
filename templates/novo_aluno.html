@@ -13,6 +13,10 @@
                 <input type="text" class="form-control" id="nome" name="nome" required>
             </div>
             <div class="mb-3">
+                <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                <input type="date" class="form-control" id="data_nascimento" name="data_nascimento">
+            </div>
+            <div class="mb-3">
                 <label for="telefone" class="form-label">Telefone</label>
                 <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(XX) XXXXX-XXXX">
             </div>
@@ -20,10 +24,20 @@
                 <label for="email" class="form-label">E-mail</label>
                 <input type="email" class="form-control" id="email" name="email">
             </div>
+
             <div class="mb-3">
-                <label for="data_nascimento" class="form-label">Data de Nascimento</label>
-                <input type="date" class="form-control" id="data_nascimento" name="data_nascimento">
+                <label for="nome_pai" class="form-label">Nome do Pai</label>
+                <input type="text" class="form-control" id="nome_pai" name="nome_pai">
             </div>
+            <div class="mb-3">
+                <label for="nome_mae" class="form-label">Nome da Mãe</label>
+                <input type="text" class="form-control" id="nome_mae" name="nome_mae">
+            </div>
+            <div class="mb-3">
+                <label for="endereco" class="form-label">Endereço Completo</label>
+                <input type="text" class="form-control" id="endereco" name="endereco">
+            </div>
+
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" id="membro_igreja" name="membro_igreja">
                 <label class="form-check-label" for="membro_igreja">Membro da Igreja?</label>
@@ -32,7 +46,7 @@
             <div class="mb-3">
                 <label for="turma_id" class="form-label">Turma</label>
                 <select class="form-select" id="turma_id" name="turma_id">
-                    <option value="">-- Selecione uma Turma --</option>
+                    <option value="">-- Nenhuma Turma --</option>
                     {% if turmas %}
                         {% for turma in turmas %}
                             <option value="{{ turma['id'] }}">
@@ -47,7 +61,7 @@
 
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="{{ url_for('alunos') }}" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">
+                <button type="submit" class="btn btn-primary">
                     <i class="bi bi-save-fill me-2"></i> Cadastrar Aluno
                 </button>
             </div>

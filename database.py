@@ -27,93 +27,43 @@ def inicializar_banco():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS turmas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL UNIQUE,
+            nome TEXT UNIQUE NOT NULL,
             descricao TEXT,
-            faixa_etaria TEXT, -- 'criancas_0_3', 'criancas_4_7', 'criancas_8_12', 'adolescentes_13_15', 'jovens_16_17', 'adultos'
+            faixa_etaria TEXT NOT NULL, -- 'criancas_0_3', 'criancas_4_7', 'criancas_8_12', 'adolescentes_13_15', 'jovens_16_17', 'adultos'
             ativa INTEGER DEFAULT 1
         )
     """)
-
-    # --- MODIFICAÇÃO PARA ALUNOS ---
-    try:
-        cursor.execute("ALTER TABLE alunos RENAME TO alunos_old")
-    except sqlite3.OperationalError as e:
-        if "no such table" in str(e):
-            pass # Ignora se a tabela não existe, pois será criada logo em seguida
-        else:
-            print(f"Aviso: Erro inesperado ao renomear alunos: {e}") # Imprime o erro mas não trava
-    except Exception as e:
-        print(f"Aviso: Erro inesperado ao renomear alunos: {e}")
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS alunos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            telefone TEXT,
-            email TEXT,
-            data_nascimento TEXT,
-            membro_igreja INTEGER DEFAULT 0,
-            turma_id INTEGER,
-            FOREIGN KEY (turma_id) REFERENCES turmas(id)
-        )
-    """)
-
-    cursor.execute("PRAGMA table_info(alunos_old)")
-    if cursor.fetchone():
-        cursor.execute("""
-            INSERT INTO alunos (id, nome, telefone, email, data_nascimento, membro_igreja, turma_id)
-            SELECT id, nome, telefone, email, data_nascimento, membro_igreja, turma_id
-            FROM alunos_old
-        """)
-        cursor.execute("DROP TABLE alunos_old")
-    # --- FIM DA MODIFICAÇÃO PARA ALUNOS ---
-
-
-    # --- MODIFICAÇÃO PARA PROFESSORES ---
-    try:
-        cursor.execute("ALTER TABLE professores RENAME TO professores_old")
-    except sqlite3.OperationalError as e:
-        if "no such table" in str(e):
-            pass
-        else:
-            print(f"Aviso: Erro inesperado ao renomear professores: {e}")
-    except Exception as e:
-        print(f"Aviso: Erro inesperado ao renomear professores: {e}")
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS professores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            telefone TEXT,
-            email TEXT,
-            especialidade TEXT
-        )
-    """)
-
-    cursor.execute("PRAGMA table_info(professores_old)")
-    if cursor.fetchone():
-        cursor.execute("""
-            INSERT INTO professores (id, nome, telefone, email, especialidade)
-            SELECT id, nome, telefone, email, especialidade
-            FROM professores_old
-        """)
-        cursor.execute("DROP TABLE professores_old")
-    # --- FIM DA MODIFICAÇÃO PARA PROFESSORES ---
-
 
     # Tabela de Disciplinas
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS disciplinas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL UNIQUE,
+            nome TEXT UNIQUE NOT NULL,
             descricao TEXT,
-            duracao_semanas INTEGER DEFAULT 4,
-            nota_minima REAL DEFAULT 6.0,
-            frequencia_minima REAL DEFAULT 75.0, -- Em porcentagem
-            tem_atividades INTEGER DEFAULT 0,
             professor_id INTEGER,
+            tem_atividades INTEGER DEFAULT 0, -- 0 para não, 1 para sim
+            frequencia_minima REAL DEFAULT 75.0, -- % de frequência mínima
             ativa INTEGER DEFAULT 1,
-            FOREIGN KEY (professor_id) REFERENCES professores(id)
+            FOREIGN KEY (professor_id) REFERENCES usuarios (id)
+        )
+    """)
+
+    # Tabela de Alunos
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS alunos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            data_nascimento TEXT,
+            telefone TEXT,
+            email TEXT,
+            membro_igreja INTEGER DEFAULT 0, -- 0 para não, 1 para sim
+            turma_id INTEGER,
+            -- NOVOS CAMPOS
+            nome_pai TEXT,
+            nome_mae TEXT,
+            endereco TEXT,
+            -- FIM NOVOS CAMPOS
+            FOREIGN KEY (turma_id) REFERENCES turmas (id)
         )
     """)
 
@@ -123,22 +73,21 @@ def inicializar_banco():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             aluno_id INTEGER NOT NULL,
             disciplina_id INTEGER NOT NULL,
-            data_inicio TEXT,
+            data_inicio TEXT NOT NULL,
             data_conclusao TEXT,
+            status TEXT DEFAULT 'cursando', -- 'cursando', 'aprovado', 'reprovado', 'trancado'
             nota1 REAL,
             nota2 REAL,
-            nota_final REAL,
-            participacao REAL,
-            desafio REAL,
-            prova REAL,
-            meditacao REAL,   -- Nova coluna
-            versiculos REAL,  -- Nova coluna
-            desafio_nota REAL, -- Nova coluna (renomeado para evitar conflito com 'desafio' antigo)
-            visitante REAL,   -- Nova coluna
-            status TEXT DEFAULT 'cursando', -- 'cursando', 'aprovado', 'reprovado'
-            UNIQUE(aluno_id, disciplina_id),
-            FOREIGN KEY (aluno_id) REFERENCES alunos(id),
-            FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id)
+            participacao REAL, -- para adultos
+            desafio REAL,      -- para adultos
+            prova REAL,        -- para adultos
+            meditacao REAL,    -- para adolescentes/jovens
+            versiculos REAL,   -- para adolescentes/jovens
+            desafio_nota REAL, -- para adolescentes/jovens (renomeado para evitar conflito)
+            visitante REAL,    -- para adolescentes/jovens
+            FOREIGN KEY (aluno_id) REFERENCES alunos (id),
+            FOREIGN KEY (disciplina_id) REFERENCES disciplinas (id),
+            UNIQUE (aluno_id, disciplina_id)
         )
     """)
 
@@ -148,116 +97,57 @@ def inicializar_banco():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             matricula_id INTEGER NOT NULL,
             data_aula TEXT NOT NULL,
-            presente INTEGER DEFAULT 0,
-            fez_atividade INTEGER DEFAULT 0,
-            UNIQUE(matricula_id, data_aula),
-            FOREIGN KEY (matricula_id) REFERENCES matriculas(id)
+            presente INTEGER DEFAULT 0, -- 0 para falta, 1 para presente
+            fez_atividade INTEGER DEFAULT 0, -- 0 para não, 1 para sim
+            FOREIGN KEY (matricula_id) REFERENCES matriculas (id),
+            UNIQUE (matricula_id, data_aula)
         )
     """)
 
-    # Adicionar colunas se não existirem (para atualizações de banco)
-    # Colunas para disciplinas
-    try:
-        cursor.execute("ALTER TABLE disciplinas ADD COLUMN nota_minima REAL DEFAULT 6.0")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE disciplinas ADD COLUMN frequencia_minima REAL DEFAULT 75.0")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE disciplinas ADD COLUMN ativa INTEGER DEFAULT 1")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE disciplinas ADD COLUMN tem_atividades INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass
+    # --- Lógica de Migração para adicionar novas colunas ---
+    # Adicionar nome_pai, nome_mae, endereco à tabela alunos se não existirem
+    cursor.execute("PRAGMA table_info(alunos)")
+    colunas_alunos = [col[1] for col in cursor.fetchall()]
 
-    # Colunas para turmas
-    try:
-        cursor.execute("ALTER TABLE turmas ADD COLUMN ativa INTEGER DEFAULT 1")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE turmas ADD COLUMN faixa_etaria TEXT DEFAULT 'adultos'")
-    except sqlite3.OperationalError:
-        pass
+    if 'nome_pai' not in colunas_alunos:
+        cursor.execute("ALTER TABLE alunos ADD COLUMN nome_pai TEXT")
+        print("Coluna 'nome_pai' adicionada à tabela 'alunos'.")
+    if 'nome_mae' not in colunas_alunos:
+        cursor.execute("ALTER TABLE alunos ADD COLUMN nome_mae TEXT")
+        print("Coluna 'nome_mae' adicionada à tabela 'alunos'.")
+    if 'endereco' not in colunas_alunos:
+        cursor.execute("ALTER TABLE alunos ADD COLUMN endereco TEXT")
+        print("Coluna 'endereco' adicionada à tabela 'alunos'.")
 
-    # Lógica de migração para a coluna faixa_etaria na tabela turmas
-    # Mapeia valores antigos para os novos
-    try:
-        cursor.execute("SELECT id, faixa_etaria FROM turmas WHERE faixa_etaria IN ('criancas', 'adolescentes_jovens', 'adolescentes_jovens_13_17', 'adolescentes_13_14', 'jovens_16_17', 'adultos', 'adultos_18_mais')")
-        turmas_para_atualizar = cursor.fetchall()
-        for turma_id, old_faixa_etaria in turmas_para_atualizar:
-            new_faixa_etaria = old_faixa_etaria # Valor padrão se não houver mapeamento
-            if old_faixa_etaria == 'criancas':
-                new_faixa_etaria = 'criancas_8_12' # Define um padrão para crianças antigas
-            elif old_faixa_etaria == 'adolescentes_jovens' or old_faixa_etaria == 'adolescentes_jovens_13_17' or old_faixa_etaria == 'adolescentes_13_14':
-                new_faixa_etaria = 'adolescentes_13_15' # Mapeia para a nova categoria de adolescentes
-            elif old_faixa_etaria == 'jovens_16_17':
-                new_faixa_etaria = 'jovens_16_17' # Mantém jovens 16-17
-            elif old_faixa_etaria == 'adultos' or old_faixa_etaria == 'adultos_18_mais':
-                new_faixa_etaria = 'adultos' # Simplifica para 'adultos'
+    # Adicionar desafio_nota à tabela matriculas se não existir (renomeado)
+    cursor.execute("PRAGMA table_info(matriculas)")
+    colunas_matriculas = [col[1] for col in cursor.fetchall()]
 
-            if new_faixa_etaria != old_faixa_etaria:
-                cursor.execute("UPDATE turmas SET faixa_etaria = ? WHERE id = ?", (new_faixa_etaria, turma_id))
-        conn.commit()
-    except sqlite3.OperationalError as e:
-        print(f"Aviso: Erro ao migrar faixa_etaria em turmas (pode ser a primeira inicialização): {e}")
-    except Exception as e:
-        print(f"Erro inesperado durante a migração de faixa_etaria: {e}")
-
-
-    # Colunas para matriculas
-    try:
-        cursor.execute("ALTER TABLE matriculas ADD COLUMN nota_final REAL")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE matriculas ADD COLUMN status TEXT DEFAULT 'cursando'")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE matriculas ADD COLUMN participacao REAL")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE matriculas ADD COLUMN desafio REAL")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE matriculas ADD COLUMN prova REAL")
-    except sqlite3.OperationalError:
-        pass
-    # Novas colunas para Adolescentes/Jovens
-    try:
+    if 'meditacao' not in colunas_matriculas:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN meditacao REAL")
-    except sqlite3.OperationalError:
-        pass
-    try:
+        print("Coluna 'meditacao' adicionada à tabela 'matriculas'.")
+    if 'versiculos' not in colunas_matriculas:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN versiculos REAL")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        cursor.execute("ALTER TABLE matriculas ADD COLUMN desafio_nota REAL") # Renomeado para evitar conflito
-    except sqlite3.OperationalError:
-        pass
-    try:
+        print("Coluna 'versiculos' adicionada à tabela 'matriculas'.")
+    if 'desafio_nota' not in colunas_matriculas: # Usando o nome corrigido
+        cursor.execute("ALTER TABLE matriculas ADD COLUMN desafio_nota REAL")
+        print("Coluna 'desafio_nota' adicionada à tabela 'matriculas'.")
+    if 'visitante' not in colunas_matriculas:
         cursor.execute("ALTER TABLE matriculas ADD COLUMN visitante REAL")
-    except sqlite3.OperationalError:
-        pass
+        print("Coluna 'visitante' adicionada à tabela 'matriculas'.")
 
-
-    # Inserir usuário admin padrão se não existir
-    cursor.execute("SELECT COUNT(*) FROM usuarios WHERE email = 'admin@escola.com'")
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("""
-            INSERT INTO usuarios (nome,email,senha_hash,perfil)
-            VALUES (?,?,?,'admin')
-        """, ("Administrador", "admin@escola.com",
-              generate_password_hash("admin123")))
-        print("Adm criado: admin@escola.com / admin123")
+    # Criar usuário admin padrão se não existir
+    cursor.execute("SELECT id FROM usuarios WHERE email = 'admin@escola.com'")
+    if not cursor.fetchone():
+        senha_hash = generate_password_hash("admin123")
+        cursor.execute(
+            "INSERT INTO usuarios (nome, email, senha_hash, perfil) VALUES (?, ?, ?, ?)",
+            ("Administrador", "admin@escola.com", senha_hash, "admin")
+        )
+        print("ADM criado: admin@escola.com / admin123")
 
     conn.commit()
     conn.close()
+
+if __name__ == '__main__':
+    inicializar_banco()

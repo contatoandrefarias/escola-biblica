@@ -2,55 +2,86 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">➕ Matricular Aluno em Disciplina</h4>
-    <a href="/matriculas" class="btn btn-outline-secondary">← Voltar às Matrículas</a>
+    <h4 class="fw-bold mb-0">➕ Matricular Novo Aluno em Disciplina</h4>
 </div>
 
-<div class="card shadow-sm" style="max-width: 600px;">
+<div class="card shadow-sm">
     <div class="card-body">
-        <form method="POST">
+        <form action="{{ url_for('novo_aluno_disciplina') }}" method="POST">
+            <h5 class="mb-3">Dados do Novo Aluno</h5>
             <div class="mb-3">
-                <label for="aluno_id" class="form-label fw-semibold">Aluno</label>
-                <select name="aluno_id" id="aluno_id" class="form-select" required>
-                    <option value="">— Selecione o Aluno —</option>
-                    {% for aluno in alunos %}
-                    <option value="{{ aluno['id'] }}"
-                            {% if request.form.get('aluno_id')|int == aluno['id'] %}selected{% endif %}>
-                        {{ aluno['nome'] }} (Turma: {{ aluno['turma_nome'] if aluno['turma_nome'] else 'N/A' }})
-                    </option>
-                    {% endfor %}
-                </select>
-                <div class="form-text">
-                    Selecione o aluno para matricular em uma disciplina.
-                </div>
+                <label for="nome_aluno" class="form-label">Nome Completo do Aluno <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="nome_aluno" name="nome_aluno" required>
+            </div>
+            <div class="mb-3">
+                <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                <input type="date" class="form-control" id="data_nascimento" name="data_nascimento">
+            </div>
+            <div class="mb-3">
+                <label for="telefone" class="form-label">Telefone</label>
+                <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(XX) XXXXX-XXXX">
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">E-mail</label>
+                <input type="email" class="form-control" id="email" name="email">
             </div>
 
             <div class="mb-3">
-                <label for="disciplina_id" class="form-label fw-semibold">Disciplina</label>
-                <select name="disciplina_id" id="disciplina_id" class="form-select" required>
-                    <option value="">— Selecione a Disciplina —</option>
+                <label for="nome_pai" class="form-label">Nome do Pai</label>
+                <input type="text" class="form-control" id="nome_pai" name="nome_pai">
+            </div>
+            <div class="mb-3">
+                <label for="nome_mae" class="form-label">Nome da Mãe</label>
+                <input type="text" class="form-control" id="nome_mae" name="nome_mae">
+            </div>
+            <div class="mb-3">
+                <label for="endereco" class="form-label">Endereço Completo</label>
+                <input type="text" class="form-control" id="endereco" name="endereco">
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="membro_igreja" name="membro_igreja">
+                <label class="form-check-label" for="membro_igreja">Membro da Igreja?</label>
+            </div>
+
+            <div class="mb-3">
+                <label for="turma_id" class="form-label">Turma</label>
+                <select class="form-select" id="turma_id" name="turma_id">
+                    <option value="">-- Nenhuma Turma --</option>
+                    {% if turmas %}
+                        {% for turma in turmas %}
+                            <option value="{{ turma['id'] }}">
+                                {{ turma['nome'] }} ({{ turma['faixa_etaria']|replace('_', ' ')|title }})
+                            </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled>Nenhuma turma ativa encontrada</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <hr class="my-4">
+
+            <h5 class="mb-3">Dados da Matrícula</h5>
+            <div class="mb-3">
+                <label for="disciplina_id" class="form-label">Disciplina <span class="text-danger">*</span></label>
+                <select class="form-select" id="disciplina_id" name="disciplina_id" required>
+                    <option value="">-- Selecione a Disciplina --</option>
                     {% for disciplina in disciplinas %}
-                    <option value="{{ disciplina['id'] }}"
-                            {% if request.form.get('disciplina_id')|int == disciplina['id'] %}selected{% endif %}>
-                        {{ disciplina['nome'] }}
-                    </option>
+                        <option value="{{ disciplina['id'] }}">{{ disciplina['nome'] }}</option>
                     {% endfor %}
                 </select>
             </div>
-
             <div class="mb-3">
-                <label for="data_inicio" class="form-label fw-semibold">Data de Início</label>
-                <input type="date" name="data_inicio" id="data_inicio" class="form-control"
-                       value="{{ request.form.get('data_inicio', now.strftime('%Y-%m-%d')) }}" required>
+                <label for="data_inicio" class="form-label">Data de Início <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ now.strftime('%Y-%m-%d') }}" required>
             </div>
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-success px-4">
-                    <i class="bi bi-plus-circle-fill me-2"></i> Matricular Aluno
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{{ url_for('matriculas') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-person-plus-fill me-2"></i> Cadastrar e Matricular
                 </button>
-                <a href="/matriculas" class="btn btn-outline-secondary">
-                    Cancelar
-                </a>
             </div>
         </form>
     </div>
