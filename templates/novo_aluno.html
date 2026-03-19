@@ -3,73 +3,53 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0">➕ Novo Aluno</h4>
-    <a href="/alunos" class="btn btn-outline-secondary">← Voltar</a>
 </div>
 
-<div class="card shadow-sm" style="max-width:500px">
-    <div class="card-header fw-semibold">Dados do Aluno</div>
+<div class="card shadow-sm">
     <div class="card-body">
-        <form method="POST">
+        <form action="{{ url_for('novo_aluno') }}" method="POST">
             <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    Nome Completo <span class="text-danger">*</span>
-                </label>
-                <input type="text" name="nome" class="form-control"
-                       required autofocus
-                       placeholder="Nome do aluno">
+                <label for="nome" class="form-label">Nome Completo <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="nome" name="nome" required>
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold">Telefone</label>
-                <input type="text" name="telefone" class="form-control"
-                       placeholder="Ex: (99) 99999-9999">
+                <label for="telefone" class="form-label">Telefone</label>
+                <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(XX) XXXXX-XXXX">
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold">E-mail</label>
-                <input type="email" name="email" class="form-control"
-                       placeholder="email@exemplo.com">
+                <label for="email" class="form-label">E-mail</label>
+                <input type="email" class="form-control" id="email" name="email">
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    Data de Nascimento
-                </label>
-                <input type="date" name="data_nascimento"
-                       class="form-control">
+                <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                <input type="date" class="form-control" id="data_nascimento" name="data_nascimento">
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="membro_igreja" name="membro_igreja">
+                <label class="form-check-label" for="membro_igreja">Membro da Igreja?</label>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    🏫 Turma
-                </label>
-                <select name="turma_id" class="form-select">
-                    <option value="">— Nenhuma turma —</option>
-                    {% for t in turmas %}
-                    <option value="{{ t['id'] }}">{{ t['nome'] }}</option>
-                    {% endfor %}
+                <label for="turma_id" class="form-label">Turma</label>
+                <select class="form-select" id="turma_id" name="turma_id">
+                    <option value="">-- Selecione uma Turma --</option>
+                    {% if turmas %}
+                        {% for turma in turmas %}
+                            <option value="{{ turma['id'] }}">
+                                {{ turma['nome'] }} ({{ turma['faixa_etaria']|replace('_', ' ')|title }})
+                            </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled>Nenhuma turma ativa encontrada</option>
+                    {% endif %}
                 </select>
-                <div class="form-text">
-                    Selecione a turma que o aluno pertence.
-                </div>
             </div>
 
-            <div class="mb-4">
-                <div class="form-check form-switch">
-                    <input type="checkbox" name="membro_igreja"
-                           class="form-check-input" id="membro_igreja"
-                           style="width:2.5rem;height:1.3rem">
-                    <label class="form-check-label ms-2"
-                           for="membro_igreja">
-                        ✝️ Membro da Igreja
-                    </label>
-                </div>
-            </div>
-
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary px-4">
-                    💾 Cadastrar Aluno
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{{ url_for('alunos') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-save-fill me-2"></i> Cadastrar Aluno
                 </button>
-                <a href="/alunos" class="btn btn-outline-secondary">
-                    Cancelar
-                </a>
             </div>
         </form>
     </div>

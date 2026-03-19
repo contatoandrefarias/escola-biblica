@@ -2,54 +2,54 @@
 {% block conteudo %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">✏️ Editar Aluno</h4>
-    <a href="/alunos" class="btn btn-outline-secondary">← Voltar</a>
+    <h4 class="fw-bold mb-0">✏️ Editar Aluno: {{ aluno['nome'] }}</h4>
 </div>
 
-<div class="card" style="max-width:500px">
-    <div class="card-header">Dados do Aluno</div>
+<div class="card shadow-sm">
     <div class="card-body">
-        <form method="POST">
+        <form action="{{ url_for('editar_aluno', id=aluno['id']) }}" method="POST">
             <div class="mb-3">
-                <label class="form-label fw-semibold">
-                    Nome Completo <span class="text-danger">*</span>
-                </label>
-                <input type="text" name="nome"
-                       class="form-control" required
-                       value="{{ aluno['nome'] }}">
+                <label for="nome" class="form-label">Nome Completo <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="nome" name="nome" value="{{ aluno['nome'] }}" required>
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold">Telefone</label>
-                <input type="text" name="telefone"
-                       class="form-control"
-                       value="{{ aluno['telefone'] or '' }}">
+                <label for="telefone" class="form-label">Telefone</label>
+                <input type="text" class="form-control" id="telefone" name="telefone" value="{{ aluno['telefone'] or '' }}" placeholder="(XX) XXXXX-XXXX">
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold">E-mail</label>
-                <input type="email" name="email"
-                       class="form-control"
-                       value="{{ aluno['email'] or '' }}">
+                <label for="email" class="form-label">E-mail</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ aluno['email'] or '' }}">
             </div>
-            <div class="mb-4">
-                <div class="form-check">
-                    <input type="checkbox" name="membro_igreja"
-                           class="form-check-input" id="membro"
-                           {% if aluno['membro_igreja'] %}
-                               checked
-                           {% endif %}>
-                    <label class="form-check-label" for="membro">
-                        ✝️ Membro da Igreja
-                    </label>
-                </div>
+            <div class="mb-3">
+                <label for="data_nascimento" class="form-label">Data de Nascimento</label>
+                <input type="date" class="form-control" id="data_nascimento" name="data_nascimento" value="{{ aluno['data_nascimento'] or '' }}">
             </div>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-warning px-4">
-                    💾 Atualizar
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="membro_igreja" name="membro_igreja" {% if aluno['membro_igreja'] %}checked{% endif %}>
+                <label class="form-check-label" for="membro_igreja">Membro da Igreja?</label>
+            </div>
+
+            <div class="mb-3">
+                <label for="turma_id" class="form-label">Turma</label>
+                <select class="form-select" id="turma_id" name="turma_id">
+                    <option value="">-- Nenhuma Turma --</option>
+                    {% if turmas %}
+                        {% for turma in turmas %}
+                            <option value="{{ turma['id'] }}" {% if aluno['turma_id'] == turma['id'] %}selected{% endif %}>
+                                {{ turma['nome'] }} ({{ turma['faixa_etaria']|replace('_', ' ')|title }})
+                            </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled>Nenhuma turma ativa encontrada</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{{ url_for('alunos') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save-fill me-2"></i> Salvar Alterações
                 </button>
-                <a href="/alunos"
-                   class="btn btn-outline-secondary">
-                    Cancelar
-                </a>
             </div>
         </form>
     </div>
